@@ -15,7 +15,7 @@ Thumbs.db
 # Node.js
 node_modules/
 
-# Runtime data
+# Runtime data (created at project cwd, not plugin root)
 .reforge/
 .omo/
 

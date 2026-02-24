@@ -4,8 +4,5 @@
   "description": "not oh-my. reforged. — AI agent orchestration, quality hooks, and smart routing for Claude Code",
   "author": {
     "name": "Tom (speson)"
-  },
-  "commands": "./commands",
-  "agents": "./agents",
-  "hooks": "./hooks/hooks.json"
+  }
 }
