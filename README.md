@@ -1,5 +1,7 @@
 # not-my-reforge
 
+![not-my-reforge](assets/banner.png)
+
 *not oh-my. reforged.*
 
 AI agent orchestration, quality hooks, and smart routing for Claude Code — reforged from oh-my-opencode and oh-my-claudecode.
