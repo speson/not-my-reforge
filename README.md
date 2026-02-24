@@ -117,7 +117,7 @@ All commands prefixed with `/not-my-reforge:` (e.g. `/not-my-reforge:quick`)
 | `reforge parallel <task>` | Parallel subtask execution |
 | `reforge cancel [target]` | Cancel active mode |
 
-**Shortcuts** (`#` prefix, anywhere in prompt):
+**Shortcuts** (`#` prefix, anywhere in prompt — shows `[#shortcut]` confirmation on match):
 
 | Shortcut | Effect |
 |----------|--------|
@@ -132,7 +132,7 @@ All commands prefixed with `/not-my-reforge:` (e.g. `/not-my-reforge:quick`)
 
 ## Hooks
 
-39 automatic hooks across 5 categories:
+40 automatic hooks across 5 categories:
 
 | Category | Hooks | Highlights |
 |----------|-------|------------|
@@ -140,7 +140,7 @@ All commands prefixed with `/not-my-reforge:` (e.g. `/not-my-reforge:quick`)
 | **Verification** | verification-gate, todo-enforcer, deliverable-check | Quality checks on Stop |
 | **Intelligence** | project-memory, learner, task-sizer, context-monitor, failure-tracker | Auto-detect stack, learn patterns, circuit breaker |
 | **Orchestration** | ralph-\*, autopilot-\*, pipeline-\*, swarm-\*, cancel-handler, teammate-idle, task-completed | Mode lifecycle management |
-| **Observability** | metrics-collector, subagent-tracker, hud-update, notify-completion, session-\*, shutdown-protocol, code-simplifier | Tracking, notifications, cleanup |
+| **Observability** | metrics-collector, subagent-tracker, hud-update, todo-tracker, notify-completion, session-\*, shutdown-protocol, code-simplifier | Tracking, notifications, cleanup |
 
 ## Skills
 
@@ -157,6 +157,23 @@ All commands prefixed with `/not-my-reforge:` (e.g. `/not-my-reforge:quick`)
 /not-my-reforge:notify add slack <webhook_url>
 /not-my-reforge:notify add telegram <bot_token>:<chat_id>
 ```
+
+## Todo Pane
+
+When Claude creates tasks (TaskCreate/TaskUpdate), a tmux side pane opens automatically to display real-time progress:
+
+```
+╭─ reforge: todo ─────────────╮
+│                              │
+│  ✓ 1. Set up database schema │
+│  ◆ 2. Implement auth API     │
+│  ○ 3. Add unit tests         │
+│                              │
+│  ━━━━━━━━━━░░░░░░░░░░  1/3  │
+╰──────────────────────────────╯
+```
+
+Requires tmux. Silently skipped outside tmux sessions.
 
 ## Parallel Execution
 
