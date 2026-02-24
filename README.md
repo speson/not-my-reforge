@@ -18,11 +18,17 @@ claude plugin install not-my-reforge
 
 ```bash
 git clone https://github.com/speson/not-my-reforge
-claude --plugin-dir ./plugins/not-my-reforge
-
-# Build from source
 cd plugins/not-my-reforge && npm install && npm run build
+
+# Run Claude Code with local plugin
+claude --plugin-dir ./plugins/not-my-reforge
 ```
+
+> **Note:** When developing this plugin itself, always use `--plugin-dir` to point at
+> the local source. The installed version (`~/.claude/plugins/cache/...`) is a separate
+> copy — edits to the repo won't take effect until you reinstall or use this flag.
+> Using `--plugin-dir` also ensures hooks run against your latest build, avoiding
+> stale-cache issues like the verification gate running outdated code.
 </details>
 
 ## Quick Start
