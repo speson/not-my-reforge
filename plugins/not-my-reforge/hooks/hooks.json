@@ -2,6 +2,17 @@
   "hooks": {
     "SessionStart": [
       {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/ensure-tmux.sh\"",
+            "timeout": 120,
+            "statusMessage": "Checking tmux..."
+          }
+        ]
+      },
+      {
         "matcher": "startup|resume",
         "hooks": [
           {
@@ -191,6 +202,17 @@
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" metrics-collector.js",
             "timeout": 5,
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "TaskCreate|TaskUpdate|TaskList",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" todo-tracker.js",
+            "timeout": 10,
             "async": true
           }
         ]
