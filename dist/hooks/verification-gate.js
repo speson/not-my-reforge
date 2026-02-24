@@ -1,0 +1,26 @@
+// verification-gate.ts — Evidence-based verification before session stop
+// Event: Stop (replaces todo-enforcer as superset)
+import { readStdin, writeError } from "../lib/io.js";
+import { runVerification } from "../lib/verification/checker.js";
+async function main() {
+    const input = await readStdin();
+    const cwd = input.cwd;
+    if (!cwd)
+        process.exit(0);
+    const transcript = input.transcript || [];
+    const report = runVerification(cwd, transcript);
+    if (!report.allPassed) {
+        const failDetails = report.results
+            .filter((r) => r.status === "fail")
+            .map((r) => `  ${r.check}: ${r.evidence || "not executed"}`)
+            .join("\n");
+        writeError([
+            `Verification failed. Please address before finishing:`,
+            failDetails,
+            "",
+            `Action needed: ${report.summary}`,
+        ].join("\n"));
+        process.exit(2);
+    }
+}
+main();

@@ -1,0 +1,53 @@
+# AI Slop Comment Patterns
+# Lines starting with # are ignored
+# Each line is a regex pattern matched case-insensitively against comments
+
+# Obvious filler comments
+TODO: Implement
+FIXME: Add implementation
+Add your .* here
+Your .* goes here
+Placeholder for
+This is a placeholder
+Insert .* logic here
+
+# Restating what the code does
+Initialize the variable
+Set the value
+Return the result
+Call the function
+Import the module
+Define the class
+Create an instance
+Loop through
+Iterate over
+Check if .* is
+
+# Unnecessary section markers
+# --- .* ---
+# === .* ===
+# \*\*\* .* \*\*\*
+
+# Overly verbose AI-style comments
+The following code
+This function does
+This method is responsible for
+This block handles
+We need to
+Now we can
+Here we
+As mentioned above
+As described
+For safety
+For robustness
+For clarity
+For convenience
+Handle the edge case
+Ensure that
+Make sure
+
+# Empty catch / error swallowing
+ignore this error
+silently fail
+swallow
+do nothing here
