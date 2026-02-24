@@ -4,8 +4,11 @@
 
 set -euo pipefail
 
-# Already installed — exit silently
+# Installed — check if running inside tmux
 if command -v tmux &>/dev/null; then
+  if [[ -z "${TMUX:-}" ]]; then
+    echo '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"[tmux] You are NOT inside a tmux session. Features like todo pane and parallel execution require tmux. Restart with: tmux new-session \"claude\"\nTell the user this recommendation."}}'
+  fi
   exit 0
 fi
 
