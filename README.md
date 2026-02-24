@@ -13,6 +13,12 @@ claude plugin marketplace add https://github.com/speson/not-my-reforge
 claude plugin install not-my-reforge
 ```
 
+For the best experience (todo pane, parallel execution), run inside tmux:
+
+```bash
+tmux new-session "claude"
+```
+
 <details>
 <summary>Local development</summary>
 
@@ -20,8 +26,8 @@ claude plugin install not-my-reforge
 git clone https://github.com/speson/not-my-reforge
 cd plugins/not-my-reforge && npm install && npm run build
 
-# Run Claude Code with local plugin
-claude --plugin-dir ./plugins/not-my-reforge
+# Run inside tmux for full feature support
+tmux new-session "claude --plugin-dir ./plugins/not-my-reforge"
 ```
 
 > **Note:** When developing this plugin itself, always use `--plugin-dir` to point at
