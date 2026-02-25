@@ -1,6 +1,6 @@
 {
   "name": "not-my-reforge",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "not oh-my. reforged. — AI agent orchestration, quality hooks, and smart routing for Claude Code",
   "author": "Tom (speson)",
   "type": "module",
