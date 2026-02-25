@@ -2,7 +2,7 @@
 // Event: UserPromptSubmit
 
 import { readStdin, writeOutput, writeError } from "../lib/io.js";
-import { readDataFile } from "../lib/storage.js";
+import { readDataFile, writeDataFile } from "../lib/storage.js";
 import { formatModeStatus, activateMode, getActiveMode } from "../lib/mode-registry/registry.js";
 import { formatOwnershipStatus } from "../lib/file-ownership/registry.js";
 import { loadNotepad, addNote } from "../lib/notepad/storage.js";
@@ -379,6 +379,15 @@ async function main() {
     .trim();
 
   const output = shortcut.handler(cwd, context);
+
+  // Track last used shortcut for sidebar display
+  writeDataFile(cwd, "shortcut-state.json", {
+    lastShortcut: {
+      name: shortcutName,
+      usedAt: Date.now(),
+      context: context || null,
+    },
+  });
 
   // Notify user that the shortcut was caught
   const label = context

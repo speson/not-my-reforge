@@ -8,6 +8,7 @@ set -euo pipefail
 CWD="${1:-.}"
 TODO_FILE="${CWD}/.reforge/todo-state.json"
 MODE_FILE="${CWD}/.reforge/mode-registry.json"
+SHORTCUT_FILE="${CWD}/.reforge/shortcut-state.json"
 
 # Colors
 C_RESET="\033[0m"
@@ -62,59 +63,80 @@ render_shortcut() {
   echo ""
   echo -e "  ${C_BOLD}${C_MAGENTA}SHORTCUT${C_RESET}"
 
-  if [[ ! -f "$MODE_FILE" ]]; then
-    echo -e "  ${C_DIM}none${C_RESET}"
-    return
-  fi
+  local has_content=false
 
-  local mode_name="" mode_goal="" activated_at=0
+  # 1) Active mode from mode-registry.json
+  if [[ -f "$MODE_FILE" ]]; then
+    local mode_name="" mode_goal="" activated_at=0
 
-  if command -v jq &>/dev/null; then
-    mode_name=$(jq -r '.activeMode.name // empty' "$MODE_FILE" 2>/dev/null || true)
-    mode_goal=$(jq -r '.activeMode.goal // empty' "$MODE_FILE" 2>/dev/null || true)
-    activated_at=$(jq -r '.activeMode.activatedAt // 0' "$MODE_FILE" 2>/dev/null || echo 0)
-  else
-    # Node fallback
-    local node_bin=""
-    if command -v node &>/dev/null; then node_bin="node"
-    elif [[ -x "$HOME/.volta/bin/node" ]]; then node_bin="$HOME/.volta/bin/node"
-    elif [[ -x "$HOME/.nvm/current/bin/node" ]]; then node_bin="$HOME/.nvm/current/bin/node"
+    if command -v jq &>/dev/null; then
+      mode_name=$(jq -r '.activeMode.name // empty' "$MODE_FILE" 2>/dev/null || true)
+      mode_goal=$(jq -r '.activeMode.goal // empty' "$MODE_FILE" 2>/dev/null || true)
+      activated_at=$(jq -r '.activeMode.activatedAt // 0' "$MODE_FILE" 2>/dev/null || echo 0)
     fi
-    if [[ -n "$node_bin" ]]; then
-      local parsed
-      parsed=$("$node_bin" -e "
-        const d=JSON.parse(require('fs').readFileSync('$MODE_FILE','utf-8'));
-        const m=d.activeMode||{};
-        console.log(m.name||'');
-        console.log(m.goal||'');
-        console.log(m.activatedAt||0);
-      " 2>/dev/null) || true
-      if [[ -n "$parsed" ]]; then
-        mode_name=$(echo "$parsed" | sed -n '1p')
-        mode_goal=$(echo "$parsed" | sed -n '2p')
-        activated_at=$(echo "$parsed" | sed -n '3p')
+
+    if [[ -n "$mode_name" ]]; then
+      has_content=true
+      local max_goal=$((width - 6))
+      if [[ ${#mode_goal} -gt $max_goal ]]; then
+        mode_goal="${mode_goal:0:$((max_goal - 2))}.."
+      fi
+      echo -e "  ${C_YELLOW}${S_ACTIVE} ${mode_name}${C_RESET} ${C_DIM}— ${mode_goal}${C_RESET}"
+
+      if [[ "$activated_at" -gt 0 ]]; then
+        local now
+        now=$(date +%s)
+        local elapsed=$((now - activated_at / 1000))
+        if [[ $elapsed -lt 0 ]]; then elapsed=0; fi
+        local mins=$((elapsed / 60))
+        local secs=$((elapsed % 60))
+        echo -e "  ${C_DIM}⏱ ${mins}m ${secs}s${C_RESET}"
       fi
     fi
   fi
 
-  if [[ -z "$mode_name" ]]; then
-    echo -e "  ${C_DIM}none${C_RESET}"
-  else
-    local max_goal=$((width - 6))
-    if [[ ${#mode_goal} -gt $max_goal ]]; then
-      mode_goal="${mode_goal:0:$((max_goal - 2))}.."
-    fi
-    echo -e "  ${C_YELLOW}${S_ACTIVE} ${mode_name}${C_RESET} ${C_DIM}— ${mode_goal}${C_RESET}"
+  # 2) Last used shortcut from shortcut-state.json
+  if [[ -f "$SHORTCUT_FILE" ]]; then
+    local sc_name="" sc_used_at=0 sc_context=""
 
-    if [[ "$activated_at" -gt 0 ]]; then
+    if command -v jq &>/dev/null; then
+      sc_name=$(jq -r '.lastShortcut.name // empty' "$SHORTCUT_FILE" 2>/dev/null || true)
+      sc_used_at=$(jq -r '.lastShortcut.usedAt // 0' "$SHORTCUT_FILE" 2>/dev/null || echo 0)
+      sc_context=$(jq -r '.lastShortcut.context // empty' "$SHORTCUT_FILE" 2>/dev/null || true)
+    fi
+
+    if [[ -n "$sc_name" && "$sc_used_at" -gt 0 ]]; then
+      has_content=true
       local now
       now=$(date +%s)
-      local elapsed=$((now - activated_at / 1000))
+      local elapsed=$((now - sc_used_at / 1000))
       if [[ $elapsed -lt 0 ]]; then elapsed=0; fi
-      local mins=$((elapsed / 60))
-      local secs=$((elapsed % 60))
-      echo -e "  ${C_DIM}⏱ ${mins}m ${secs}s${C_RESET}"
+
+      local ago=""
+      if [[ $elapsed -lt 60 ]]; then
+        ago="${elapsed}s ago"
+      elif [[ $elapsed -lt 3600 ]]; then
+        ago="$((elapsed / 60))m ago"
+      else
+        ago="$((elapsed / 3600))h ago"
+      fi
+
+      local line="  ${C_CYAN}#${sc_name}${C_RESET} ${C_DIM}${ago}${C_RESET}"
+      if [[ -n "$sc_context" ]]; then
+        local max_ctx=$((width - ${#sc_name} - ${#ago} - 8))
+        if [[ $max_ctx -gt 3 ]]; then
+          if [[ ${#sc_context} -gt $max_ctx ]]; then
+            sc_context="${sc_context:0:$((max_ctx - 2))}.."
+          fi
+          line="  ${C_CYAN}#${sc_name}${C_RESET} ${C_DIM}${sc_context} · ${ago}${C_RESET}"
+        fi
+      fi
+      echo -e "$line"
     fi
+  fi
+
+  if [[ "$has_content" == false ]]; then
+    echo -e "  ${C_DIM}none${C_RESET}"
   fi
 }
 
@@ -328,6 +350,9 @@ compute_hash() {
   fi
   if [[ -f "$MODE_FILE" ]]; then
     h+=$(md5 -q "$MODE_FILE" 2>/dev/null || md5sum "$MODE_FILE" 2>/dev/null | cut -d' ' -f1 || echo "m")
+  fi
+  if [[ -f "$SHORTCUT_FILE" ]]; then
+    h+=$(md5 -q "$SHORTCUT_FILE" 2>/dev/null || md5sum "$SHORTCUT_FILE" 2>/dev/null | cut -d' ' -f1 || echo "s")
   fi
   # git diff changes are detected by the 5s cache refresh, not hashing
   echo "$h"
