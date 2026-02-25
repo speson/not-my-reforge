@@ -176,7 +176,7 @@ const KEYWORD_HANDLERS = [
 ];
 async function main() {
     const input = await readStdin();
-    const prompt = input.user_prompt;
+    const prompt = input.prompt;
     if (!prompt)
         process.exit(0);
     for (const handler of KEYWORD_HANDLERS) {

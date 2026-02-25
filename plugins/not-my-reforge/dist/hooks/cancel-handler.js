@@ -6,7 +6,7 @@ import { deactivateMode } from "../lib/mode-registry/registry.js";
 async function main() {
     const input = await readStdin();
     const cwd = input.cwd;
-    const prompt = input.user_prompt?.trim() || "";
+    const prompt = input.prompt?.trim() || "";
     if (!cwd || !prompt)
         process.exit(0);
     // Detect cancel intent

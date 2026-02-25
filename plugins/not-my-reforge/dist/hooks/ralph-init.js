@@ -28,7 +28,7 @@ function parseLoopArgs(prompt) {
 async function main() {
     const input = await readStdin();
     const cwd = input.cwd;
-    const prompt = input.user_prompt;
+    const prompt = input.prompt;
     if (!cwd || !prompt)
         process.exit(0);
     // Handle cancel

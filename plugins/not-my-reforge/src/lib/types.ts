@@ -58,7 +58,7 @@ export interface PreCompactInput extends HookInput {
 
 export interface UserPromptSubmitInput extends HookInput {
   cwd: string;
-  user_prompt: string;
+  prompt: string;
 }
 
 // Hook output types

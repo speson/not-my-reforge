@@ -42,7 +42,7 @@ function parseLoopArgs(prompt: string): { task: string; max: number; verify: str
 async function main() {
   const input = await readStdin<UserPromptSubmitInput>();
   const cwd = input.cwd;
-  const prompt = input.user_prompt;
+  const prompt = input.prompt;
 
   if (!cwd || !prompt) process.exit(0);
 

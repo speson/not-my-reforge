@@ -7,7 +7,7 @@ import type { UserPromptSubmitInput } from "../lib/types.js";
 
 async function main() {
   const input = await readStdin<UserPromptSubmitInput>();
-  const prompt = input.user_prompt;
+  const prompt = input.prompt;
 
   if (!prompt || prompt.length < 10) process.exit(0);
 

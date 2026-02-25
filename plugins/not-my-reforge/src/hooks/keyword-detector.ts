@@ -185,7 +185,7 @@ const KEYWORD_HANDLERS: ((prompt: string) => KeywordMatch | null)[] = [
 
 async function main() {
   const input = await readStdin<UserPromptSubmitInput>();
-  const prompt = input.user_prompt;
+  const prompt = input.prompt;
 
   if (!prompt) process.exit(0);
 

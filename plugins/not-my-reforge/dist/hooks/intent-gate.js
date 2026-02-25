@@ -4,7 +4,7 @@ import { readStdin, writeOutput } from "../lib/io.js";
 import { analyzeIntent, formatIntentWarning } from "../lib/intent/detector.js";
 async function main() {
     const input = await readStdin();
-    const prompt = input.user_prompt?.trim() || "";
+    const prompt = input.prompt?.trim() || "";
     if (!prompt)
         process.exit(0);
     // Skip reforge commands — they have their own handling

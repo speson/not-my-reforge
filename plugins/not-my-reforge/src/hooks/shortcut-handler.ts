@@ -372,7 +372,7 @@ const SHORTCUTS: Shortcut[] = [
 async function main() {
   const input = await readStdin<UserPromptSubmitInput>();
   const cwd = input.cwd;
-  const prompt = input.user_prompt?.trim() || "";
+  const prompt = input.prompt?.trim() || "";
 
   if (!cwd || !prompt) process.exit(0);
 
@@ -406,9 +406,10 @@ async function main() {
     if (inTmux) {
       const safeLabel = label.replace(/'/g, "'\\''");
       const [bg, fg, icon] = SHORTCUT_THEMES[shortcutName] || [24, 230, "⚡"];
-      spawn("sh", ["-c",
+      const child = spawn("sh", ["-c",
         `nohup tmux display-popup -E -w 60 -h 7 "printf '\\033[48;5;${bg}m'; clear; printf '\\033[48;5;${bg};38;5;${fg};1m\\n\\n    ${icon} %s\\n\\n' '${safeLabel}'; sleep 2" </dev/null >/dev/null 2>&1 &`,
-      ], { stdio: "ignore" });
+      ], { detached: true, stdio: "ignore" });
+      child.unref();
     }
   } catch {}
 

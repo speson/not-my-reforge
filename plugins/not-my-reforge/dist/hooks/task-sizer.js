@@ -4,7 +4,7 @@ import { readStdin, writeOutput } from "../lib/io.js";
 import { selectModelTier, formatRoutingAdvice } from "../lib/model-router/router.js";
 async function main() {
     const input = await readStdin();
-    const prompt = input.user_prompt;
+    const prompt = input.prompt;
     if (!prompt || prompt.length < 10)
         process.exit(0);
     // Don't analyze if user already used reforge keywords (explicit mode)
