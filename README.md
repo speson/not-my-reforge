@@ -1,6 +1,6 @@
 # not-my-reforge
 
-![not-my-reforge](plugins/not-my-reforge/assets/banner.png)
+![not-my-reforge](assets/banner.png)
 
 *not oh-my. reforged.*
 
@@ -9,8 +9,7 @@ AI agent orchestration, quality hooks, and smart routing for Claude Code — ref
 ## Install
 
 ```bash
-claude plugin marketplace add https://github.com/speson/not-my-reforge
-claude plugin install not-my-reforge
+claude plugin add https://github.com/speson/not-my-reforge
 ```
 
 For the best experience (todo pane, parallel execution), run inside tmux:
@@ -24,10 +23,10 @@ tmux new-session "claude"
 
 ```bash
 git clone https://github.com/speson/not-my-reforge
-cd plugins/not-my-reforge && npm install && npm run build
+cd not-my-reforge && npm install && npm run build
 
 # Run inside tmux for full feature support
-tmux new-session "claude --plugin-dir ./plugins/not-my-reforge"
+tmux new-session "claude --plugin-dir ."
 ```
 
 > **Note:** When developing this plugin itself, always use `--plugin-dir` to point at
@@ -200,19 +199,16 @@ reforge team 3 implement auth, profiles, notifications
 
 ```
 not-my-reforge/
-├── .claude-plugin/marketplace.json    # Marketplace manifest
-├── plugins/
-│   └── not-my-reforge/               # Plugin root
-│       ├── .claude-plugin/plugin.json
-│       ├── agents/                    # 25 agents (20 core + 5 team)
-│       ├── commands/                  # 23 slash commands
-│       ├── hooks/hooks.json           # 39 hook definitions
-│       ├── skills/                    # 3 skills
-│       ├── scripts/                   # tmux, HUD, merge
-│       ├── src/                       # TypeScript source
-│       ├── dist/                      # Compiled JS (pre-built)
-│       ├── package.json
-│       └── CLAUDE.md
+├── .claude-plugin/plugin.json   # Plugin manifest
+├── agents/                      # 25 agents (20 core + 5 team)
+├── commands/                    # 23 slash commands
+├── hooks/hooks.json             # 39 hook definitions
+├── skills/                      # 3 skills
+├── scripts/                     # tmux, HUD, merge
+├── src/                         # TypeScript source
+├── dist/                        # Compiled JS (pre-built)
+├── package.json
+├── CLAUDE.md
 ├── .gitignore
 └── README.md
 ```

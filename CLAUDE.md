@@ -3,7 +3,7 @@
 ## Project Overview
 Claude Code plugin — AI agent orchestration, quality hooks, smart routing, and team coordination.
 Reforged from oh-my-opencode and oh-my-claudecode: same ideas, done right.
-This repo is structured as a **marketplace** with the plugin at `plugins/not-my-reforge/`.
+This repo is a single Claude Code plugin at the root level.
 
 ## Architecture
 - `agents/` — Markdown agent definitions (model, tools, system prompt)
@@ -22,8 +22,8 @@ This repo is structured as a **marketplace** with the plugin at `plugins/not-my-
 - Shortcut prefix: `#` (e.g., `#orch`, `#verify`, `#search`)
 
 ## Development
-- Build: `cd plugins/not-my-reforge && npm run build`
-- Test hooks: `echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/test.txt"}}' | node plugins/not-my-reforge/dist/hooks/write-guard.js`
+- Build: `npm run build`
+- Test hooks: `echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/test.txt"}}' | node dist/hooks/write-guard.js`
 - All paths in hooks use `${CLAUDE_PLUGIN_ROOT}` (resolved by Claude Code)
 - `commands/`, `agents/`, `skills/` directories are auto-discovered by Claude Code (no need to list in plugin.json)
 
