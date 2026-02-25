@@ -1,5 +1,7 @@
 // shortcut-handler.ts — # shortcut system for quick access to core features
 // Event: UserPromptSubmit
+import { execSync } from "node:child_process";
+import { appendFileSync } from "node:fs";
 import { readStdin, writeOutput, writeError } from "../lib/io.js";
 import { readDataFile } from "../lib/storage.js";
 import { formatModeStatus, activateMode, getActiveMode } from "../lib/mode-registry/registry.js";
@@ -322,28 +324,24 @@ async function main() {
         ? `[#${shortcutName}] ${context.slice(0, 60)}${context.length > 60 ? "..." : ""}`
         : `[#${shortcutName}]`;
     writeError(label);
-    // tmux popup for visible feedback (fully detached via nohup + &)
+    // Show tmux popup directly from Node (bypasses find-node.sh IPC issues)
+    const [bg, fg, icon] = SHORTCUT_THEMES[shortcutName] || [24, 230, "⚡"];
+    const tmuxEnv = process.env.TMUX;
     try {
-        const { execSync, spawn } = await import("child_process");
-        const inTmux = process.env.TMUX || (() => {
-            try {
-                execSync("tmux info", { stdio: "ignore" });
-                return true;
-            }
-            catch {
-                return false;
-            }
-        })();
-        if (inTmux) {
-            const safeLabel = label.replace(/'/g, "'\\''");
-            const [bg, fg, icon] = SHORTCUT_THEMES[shortcutName] || [24, 230, "⚡"];
-            const child = spawn("sh", ["-c",
-                `nohup tmux display-popup -E -w 60 -h 7 "printf '\\033[48;5;${bg}m'; clear; printf '\\033[48;5;${bg};38;5;${fg};1m\\n\\n    ${icon} %s\\n\\n' '${safeLabel}'; sleep 2" </dev/null >/dev/null 2>&1 &`,
-            ], { detached: true, stdio: "ignore" });
-            child.unref();
-        }
+        appendFileSync("/tmp/reforge-popup-debug.log", `[${new Date().toISOString()}] shortcut=${shortcutName} TMUX=${tmuxEnv || "UNSET"} pid=${process.pid}\n`);
     }
     catch { }
+    if (tmuxEnv) {
+        const socket = tmuxEnv.split(",")[0];
+        const msg = `#[bg=colour${bg},fg=colour${fg},bold] ${icon} ${label} `;
+        try {
+            execSync(`tmux -S "${socket}" display-message -d 2000 ${JSON.stringify(msg)}`, {
+                stdio: "ignore",
+                timeout: 2000,
+            });
+        }
+        catch { }
+    }
     writeOutput({
         hookSpecificOutput: {
             hookEventName: "UserPromptSubmit",

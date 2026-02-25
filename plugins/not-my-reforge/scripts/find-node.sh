@@ -23,7 +23,7 @@ elif [[ -x "$HOME/.asdf/shims/node" ]]; then
   NODE_BIN="$HOME/.asdf/shims/node"
 fi
 
-# If Node.js found and compiled hook exists, use it
+# If Node.js found and compiled hook exists, run it
 if [[ -n "$NODE_BIN" && -f "$HOOK_PATH" ]]; then
   exec "$NODE_BIN" "$HOOK_PATH"
 fi
