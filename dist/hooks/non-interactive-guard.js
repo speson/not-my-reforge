@@ -1,6 +1,7 @@
 // non-interactive-guard.ts — Block interactive commands that require TTY
 // Event: PreToolUse (Bash)
 import { readStdin, writeOutput } from "../lib/io.js";
+import { isYoloEnabled } from "../lib/yolo/settings.js";
 // Commands that require interactive TTY input
 const INTERACTIVE_COMMANDS = new Set([
     "vim", "nvim", "vi", "nano", "emacs", "pico", "joe", "micro",
@@ -52,6 +53,12 @@ function isInteractive(command) {
                 return { blocked: false, reason: "" };
             }
         }
+        if (baseCmd === "tmux") {
+            // Allow tmux with subcommands (list-panes, split-window, etc.)
+            if (/\btmux\s+\S/.test(command)) {
+                return { blocked: false, reason: "" };
+            }
+        }
         if (baseCmd === "less" || baseCmd === "more") {
             // Allow less with pipe input (used in scripts)
             if (command.includes("|")) {
@@ -76,6 +83,8 @@ function isInteractive(command) {
 }
 async function main() {
     const input = await readStdin();
+    if (input.cwd && isYoloEnabled(input.cwd))
+        process.exit(0);
     if (input.tool_name !== "Bash")
         process.exit(0);
     const command = input.tool_input?.command;

@@ -12,7 +12,7 @@ AI agent orchestration, quality hooks, and smart routing for Claude Code — ref
 claude plugin add https://github.com/speson/not-my-reforge
 ```
 
-For the best experience (todo pane, parallel execution), run inside tmux:
+For the best experience (sidebar dashboard, parallel execution), run inside tmux:
 
 ```bash
 tmux new-session "claude"
@@ -122,20 +122,20 @@ All commands prefixed with `/not-my-reforge:` (e.g. `/not-my-reforge:quick`)
 | `reforge parallel <task>` | Parallel subtask execution |
 | `reforge cancel [target]` | Cancel active mode |
 
-**Shortcuts** (`#` prefix, anywhere in prompt — shows color-coded tmux popup on match):
+**Shortcuts** (`#` prefix, anywhere in prompt):
 
-| Shortcut | Color | Effect |
-|----------|-------|--------|
-| `#orch [task]` | 🟣 Purple | Smart orchestration |
-| `#verify` | 🟢 Green | Quality gate checks |
-| `#search <query>` | 🟠 Orange | DeepSearch (5 strategies) |
-| `#review [base]` | 🔴 Red | Multi-perspective review |
-| `#qa [target]` | 🩵 Teal | Auto QA loop |
-| `#team` | 🔵 Blue | Team status |
-| `#status` | ⚫ Grey | Session metrics |
-| `#memo [text]` | 🟤 Amber | Session notes (`!` = critical) |
+| Shortcut | Effect |
+|----------|--------|
+| `#orch [task]` | Smart orchestration |
+| `#verify` | Quality gate checks |
+| `#search <query>` | DeepSearch (5 strategies) |
+| `#review [base]` | Multi-perspective review |
+| `#qa [target]` | Auto QA loop |
+| `#team` | Team status |
+| `#status` | Session metrics |
+| `#memo [text]` | Session notes (`!` = critical) |
 
-In tmux, each shortcut shows a centered popup (2s) with its theme color. Falls back to stderr outside tmux.
+Active shortcuts are displayed in the tmux sidebar dashboard.
 
 ## Hooks
 
@@ -165,22 +165,40 @@ In tmux, each shortcut shows a centered popup (2s) with its theme color. Falls b
 /not-my-reforge:notify add telegram <bot_token>:<chat_id>
 ```
 
-## Todo Pane
+## Sidebar Dashboard
 
-When Claude creates tasks (TaskCreate/TaskUpdate), a tmux side pane opens automatically to display real-time progress:
+A tmux sidebar pane (40 cols) opens automatically on session start, showing 3 sections:
 
 ```
-╭─ reforge: todo ─────────────╮
-│                              │
-│  ✓ 1. Set up database schema │
-│  ◆ 2. Implement auth API     │
-│  ○ 3. Add unit tests         │
-│                              │
-│  ━━━━━━━━━━░░░░░░░░░░  1/3  │
-╰──────────────────────────────╯
+  not-my-reforge v2.3.0
+
+  SHORTCUT
+  ◆ ralph — Implement auth
+  ⏱ 3m 22s
+
+─────────────────────────────────────
+
+  TODO
+  ✓ 1. Setup auth module
+  ◆ 2. Implement login flow
+  ○ 3. Add tests
+  ━━━━━━━━━━━━━━░░░░░░░░░░░░░░░  1/3
+
+─────────────────────────────────────
+
+  GIT DIFF
+  3 files changed
+
+  src/auth.ts                    +42
+  src/hooks/login.ts          +8 -3
+  tests/auth.test.ts            +15
 ```
 
-Requires tmux. Silently skipped outside tmux sessions.
+- **Shortcut**: Active mode name, goal, elapsed time
+- **Todo**: Real-time task progress (TaskCreate/TaskUpdate)
+- **Git Diff**: Per-file insertions/deletions
+
+Polls every 2s. Requires tmux — silently skipped outside tmux sessions.
 
 ## Parallel Execution
 

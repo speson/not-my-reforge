@@ -5,11 +5,11 @@ import { readStdin } from "../lib/io.js";
 import { readDataFile, writeDataFile } from "../lib/storage.js";
 import { execSync } from "node:child_process";
 const TODO_FILE = "todo-state.json";
-const PANE_TITLE = "reforge-todo";
+const PANE_TITLE = "reforge-sidebar";
 function emptyState() {
     return { tasks: [], updatedAt: new Date().toISOString() };
 }
-function openTodoPane(cwd) {
+function openSidebarPane(cwd) {
     if (!process.env.TMUX)
         return;
     try {
@@ -20,10 +20,18 @@ function openTodoPane(cwd) {
         }).trim();
         if (panes.split("\n").includes(PANE_TITLE))
             return;
-        // Find the todo-pane.sh script
+        // Find the sidebar-pane.sh script
         const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT ?? "";
-        const script = `${pluginRoot}/scripts/todo-pane.sh`;
-        execSync(`tmux split-window -h -l 35 -d "bash '${script}' '${cwd}'" \\; select-pane -t '{last}' -T '${PANE_TITLE}'`, { stdio: ["pipe", "pipe", "pipe"] });
+        const script = `${pluginRoot}/scripts/sidebar-pane.sh`;
+        // Split first, then set title on the new pane
+        execSync(`tmux split-window -h -l 40 -d "bash '${script}' '${cwd}'"`, { stdio: ["pipe", "pipe", "pipe"] });
+        const lastPane = execSync("tmux list-panes -F '#{pane_index}' | tail -1", {
+            encoding: "utf-8",
+            stdio: ["pipe", "pipe", "pipe"],
+        }).trim();
+        execSync(`tmux select-pane -t ${lastPane} -T '${PANE_TITLE}'`, {
+            stdio: ["pipe", "pipe", "pipe"],
+        });
     }
     catch {
         // tmux not available or split failed
@@ -147,7 +155,7 @@ async function main() {
     writeDataFile(cwd, TODO_FILE, state);
     // Open tmux pane on first task or if pane was closed
     if (state.tasks.length > 0) {
-        openTodoPane(cwd);
+        openSidebarPane(cwd);
     }
 }
 main();

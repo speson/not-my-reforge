@@ -5,6 +5,7 @@ import { readStdin, writeOutput } from "../lib/io.js";
 import { existsSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { isLocked } from "../lib/file-ownership/registry.js";
+import { isYoloEnabled } from "../lib/yolo/settings.js";
 import type { PreToolUseInput } from "../lib/types.js";
 
 const REGENERATED_EXTENSIONS = new Set([
@@ -33,6 +34,9 @@ async function main() {
 
   if (!filePath) process.exit(0);
 
+  // Yolo mode: bypass write guard but keep file ownership lock
+  const yoloActive = cwd ? isYoloEnabled(cwd) : false;
+
   // Check file ownership lock (parallel agent conflict prevention)
   if (cwd) {
     const lock = isLocked(cwd, filePath);
@@ -50,6 +54,8 @@ async function main() {
       }
     }
   }
+
+  if (yoloActive) process.exit(0);
 
   if (!existsSync(filePath)) process.exit(0);
 

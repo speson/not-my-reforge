@@ -2,6 +2,7 @@
 // Event: PreToolUse (Bash)
 
 import { readStdin, writeOutput } from "../lib/io.js";
+import { isYoloEnabled } from "../lib/yolo/settings.js";
 import type { PreToolUseInput } from "../lib/types.js";
 
 // Commands that require interactive TTY input
@@ -60,6 +61,12 @@ function isInteractive(command: string): { blocked: boolean; reason: string } {
         return { blocked: false, reason: "" };
       }
     }
+    if (baseCmd === "tmux") {
+      // Allow tmux with subcommands (list-panes, split-window, etc.)
+      if (/\btmux\s+\S/.test(command)) {
+        return { blocked: false, reason: "" };
+      }
+    }
     if (baseCmd === "less" || baseCmd === "more") {
       // Allow less with pipe input (used in scripts)
       if (command.includes("|")) {
@@ -87,6 +94,8 @@ function isInteractive(command: string): { blocked: boolean; reason: string } {
 
 async function main() {
   const input = await readStdin<PreToolUseInput>();
+
+  if (input.cwd && isYoloEnabled(input.cwd)) process.exit(0);
 
   if (input.tool_name !== "Bash") process.exit(0);
 

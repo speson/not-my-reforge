@@ -2,10 +2,13 @@
 // Event: UserPromptSubmit
 import { readStdin, writeOutput } from "../lib/io.js";
 import { analyzeIntent, formatIntentWarning } from "../lib/intent/detector.js";
+import { isYoloEnabled } from "../lib/yolo/settings.js";
 async function main() {
     const input = await readStdin();
     const prompt = input.prompt?.trim() || "";
     if (!prompt)
+        process.exit(0);
+    if (input.cwd && isYoloEnabled(input.cwd))
         process.exit(0);
     // Skip reforge commands — they have their own handling
     if (prompt.toLowerCase().startsWith("reforge "))

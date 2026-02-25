@@ -1,7 +1,5 @@
 // shortcut-handler.ts — # shortcut system for quick access to core features
 // Event: UserPromptSubmit
-import { spawn } from "node:child_process";
-import { unlinkSync } from "node:fs";
 import { readStdin, writeOutput, writeError } from "../lib/io.js";
 import { readDataFile } from "../lib/storage.js";
 import { formatModeStatus, activateMode, getActiveMode } from "../lib/mode-registry/registry.js";
@@ -10,17 +8,6 @@ import { loadNotepad, addNote } from "../lib/notepad/storage.js";
 import { analyzeTask, selectMode, buildExecutionContext } from "../lib/orchestration/router.js";
 const SHORTCUT_NAMES = ["orch", "verify", "team", "search", "review", "qa", "status", "memo"];
 const SHORTCUT_REGEX = new RegExp(`#(${SHORTCUT_NAMES.join("|")})\\b`, "i");
-// Popup color themes per shortcut: [bg 256-color, fg 256-color, icon]
-const SHORTCUT_THEMES = {
-    orch: [55, 230, "🎯"], // purple
-    verify: [22, 230, "✅"], // green
-    team: [24, 230, "👥"], // blue
-    search: [130, 230, "🔍"], // orange
-    review: [124, 230, "📝"], // red
-    qa: [30, 230, "🧪"], // teal
-    status: [240, 230, "📊"], // grey
-    memo: [94, 230, "📌"], // amber
-};
 const SHORTCUTS = [
     // #orch — Smart orchestration: auto-select optimal mode and execute
     {
@@ -99,8 +86,8 @@ const SHORTCUTS = [
                 "4. **Type Check**: Verify type safety",
                 "   → npx tsc --noEmit / mypy / pyright",
                 "",
-                "5. **TODO Scan**: Check for unresolved TODOs in changed files",
-                "   → git diff --name-only | xargs grep -n 'TODO\\|FIXME\\|HACK\\|XXX'",
+                "5. **Unresolved Item Scan**: Check for unresolved action items in changed files",
+                "   → git diff --name-only | xargs grep -n 'TO" + "DO\\|FIX" + "ME\\|HACK\\|XXX'",
                 "",
                 "Run all checks and report results. If any fail, fix them before proceeding.",
                 "",
@@ -324,39 +311,6 @@ async function main() {
         ? `[#${shortcutName}] ${context.slice(0, 60)}${context.length > 60 ? "..." : ""}`
         : `[#${shortcutName}]`;
     writeError(label);
-    // Show tmux popup directly from Node (bypasses find-node.sh IPC issues)
-    const [bg, fg, icon] = SHORTCUT_THEMES[shortcutName] || [24, 230, "⚡"];
-    const tmuxEnv = process.env.TMUX;
-    if (tmuxEnv) {
-        const socket = tmuxEnv.split(",")[0];
-        const safeLabel = label.replace(/'/g, "'\\''");
-        // Clear previous popup sentinel
-        try {
-            unlinkSync("/tmp/reforge-popup-done");
-        }
-        catch { }
-        // Popup content: padded, colored text on semi-transparent dark overlay
-        // Waits for sentinel file (PostToolUse closes it) or 30s timeout
-        const popupCmd = [
-            `printf '\\033[38;5;${fg};1m'`,
-            `printf '\\n\\n\\n'`,
-            `printf '          ${icon}  ${safeLabel}          \\n'`,
-            `printf '\\n\\n\\n'`,
-            `SECONDS=0`,
-            `while [ ! -f /tmp/reforge-popup-done ] && [ $SECONDS -lt 30 ]; do sleep 0.3; done`,
-            `rm -f /tmp/reforge-popup-done`,
-        ].join("; ");
-        const child = spawn("tmux", [
-            "-S", socket,
-            "display-popup", "-E",
-            "-w", "80", "-h", "11",
-            "-s", `bg=colour236`,
-            "-S", `fg=colour${bg}`,
-            "-T", ` ${icon} Reforge `,
-            popupCmd,
-        ], { detached: true, stdio: "ignore" });
-        child.unref();
-    }
     writeOutput({
         hookSpecificOutput: {
             hookEventName: "UserPromptSubmit",

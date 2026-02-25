@@ -26,6 +26,12 @@
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" project-memory-session.js",
             "timeout": 10,
             "statusMessage": "Loading project memory..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" sidebar-open.js",
+            "timeout": 10,
+            "statusMessage": "Opening sidebar..."
           }
         ]
       }
@@ -80,6 +86,12 @@
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" swarm-init.js",
             "timeout": 5,
             "statusMessage": "Checking Swarm..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" yolo-toggle.js",
+            "timeout": 5,
+            "statusMessage": "Checking yolo mode..."
           },
           {
             "type": "command",
