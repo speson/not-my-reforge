@@ -415,7 +415,7 @@ async function main() {
 
   writeOutput({
     hookSpecificOutput: {
-      hookEventName: "PostToolUse" as const,
+      hookEventName: "UserPromptSubmit" as const,
       additionalContext: output,
     },
   });

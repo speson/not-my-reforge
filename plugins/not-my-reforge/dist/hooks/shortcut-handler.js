@@ -346,7 +346,7 @@ async function main() {
     catch { }
     writeOutput({
         hookSpecificOutput: {
-            hookEventName: "PostToolUse",
+            hookEventName: "UserPromptSubmit",
             additionalContext: output,
         },
     });

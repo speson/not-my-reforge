@@ -63,7 +63,7 @@ export interface UserPromptSubmitInput extends HookInput {
 
 // Hook output types
 export interface HookOutput {
-  hookSpecificOutput?: PreToolUseOutput | PostToolUseOutput | SessionStartOutput | StopOutput | PreCompactOutput;
+  hookSpecificOutput?: PreToolUseOutput | PostToolUseOutput | UserPromptSubmitOutput | SessionStartOutput | StopOutput | PreCompactOutput;
 }
 
 export interface PreToolUseOutput {
@@ -75,6 +75,11 @@ export interface PreToolUseOutput {
 
 export interface PostToolUseOutput {
   hookEventName: "PostToolUse";
+  additionalContext?: string;
+}
+
+export interface UserPromptSubmitOutput {
+  hookEventName: "UserPromptSubmit";
   additionalContext?: string;
 }
 
