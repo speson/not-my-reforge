@@ -398,9 +398,14 @@ async function main() {
   writeError(label);
 
   // tmux popup for visible feedback (non-blocking)
-  if (process.env.TMUX) {
-    try {
-      const { spawn } = await import("child_process");
+  // Check TMUX env first; fallback to `tmux info` for cases where
+  // the parent process (Claude Code) may not pass TMUX env to hooks
+  try {
+    const { execSync, spawn } = await import("child_process");
+    const inTmux = process.env.TMUX || (() => {
+      try { execSync("tmux info", { stdio: "ignore" }); return true; } catch { return false; }
+    })();
+    if (inTmux) {
       const safeLabel = label.replace(/'/g, "'\\''");
       const [bg, fg, icon] = SHORTCUT_THEMES[shortcutName] || [24, 230, "⚡"];
       const popup = spawn("tmux", [
@@ -409,8 +414,8 @@ async function main() {
         `printf '\\033[48;5;${bg}m'; clear; printf '\\033[48;5;${bg};38;5;${fg};1m\\n\\n    ${icon} %s\\n\\n' '${safeLabel}'; sleep 2`,
       ], { detached: true, stdio: "ignore" });
       popup.unref();
-    } catch {}
-  }
+    }
+  } catch {}
 
   writeOutput({
     hookSpecificOutput: {
