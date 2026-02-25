@@ -1,5 +1,6 @@
 // context-monitor.ts — Track context window usage and warn on high usage
 // Event: PostToolUse (all tools)
+import { writeFileSync } from "node:fs";
 import { readStdin, writeError, writeOutput } from "../lib/io.js";
 import { loadMetrics, saveMetrics, recordToolCall } from "../lib/metrics/tracker.js";
 import { CONTEXT_THRESHOLDS } from "../lib/metrics/types.js";
@@ -10,6 +11,11 @@ function estimateOutputTokens(output) {
     return Math.min(Math.ceil(output.length / 4), 10000);
 }
 async function main() {
+    // Dismiss shortcut popup when Claude starts responding
+    try {
+        writeFileSync("/tmp/reforge-popup-done", "");
+    }
+    catch { }
     const input = await readStdin();
     const cwd = input.cwd;
     if (!cwd)

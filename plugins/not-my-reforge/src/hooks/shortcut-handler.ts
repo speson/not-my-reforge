@@ -1,8 +1,8 @@
 // shortcut-handler.ts — # shortcut system for quick access to core features
 // Event: UserPromptSubmit
 
-import { execSync } from "node:child_process";
-import { appendFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { unlinkSync } from "node:fs";
 import { readStdin, writeOutput, writeError } from "../lib/io.js";
 import { readDataFile } from "../lib/storage.js";
 import { formatModeStatus, activateMode, getActiveMode } from "../lib/mode-registry/registry.js";
@@ -402,19 +402,35 @@ async function main() {
   // Show tmux popup directly from Node (bypasses find-node.sh IPC issues)
   const [bg, fg, icon] = SHORTCUT_THEMES[shortcutName] || [24, 230, "⚡"];
   const tmuxEnv = process.env.TMUX;
-  try {
-    appendFileSync("/tmp/reforge-popup-debug.log",
-      `[${new Date().toISOString()}] shortcut=${shortcutName} TMUX=${tmuxEnv || "UNSET"} pid=${process.pid}\n`);
-  } catch {}
   if (tmuxEnv) {
     const socket = tmuxEnv.split(",")[0];
-    const msg = `#[bg=colour${bg},fg=colour${fg},bold] ${icon} ${label} `;
-    try {
-      execSync(`tmux -S "${socket}" display-message -d 2000 ${JSON.stringify(msg)}`, {
-        stdio: "ignore",
-        timeout: 2000,
-      });
-    } catch {}
+    const safeLabel = label.replace(/'/g, "'\\''");
+
+    // Clear previous popup sentinel
+    try { unlinkSync("/tmp/reforge-popup-done"); } catch {}
+
+    // Popup content: padded, colored text on semi-transparent dark overlay
+    // Waits for sentinel file (PostToolUse closes it) or 30s timeout
+    const popupCmd = [
+      `printf '\\033[38;5;${fg};1m'`,
+      `printf '\\n\\n\\n'`,
+      `printf '          ${icon}  ${safeLabel}          \\n'`,
+      `printf '\\n\\n\\n'`,
+      `SECONDS=0`,
+      `while [ ! -f /tmp/reforge-popup-done ] && [ $SECONDS -lt 30 ]; do sleep 0.3; done`,
+      `rm -f /tmp/reforge-popup-done`,
+    ].join("; ");
+
+    const child = spawn("tmux", [
+      "-S", socket,
+      "display-popup", "-E",
+      "-w", "80", "-h", "11",
+      "-s", `bg=colour236`,
+      "-S", `fg=colour${bg}`,
+      "-T", ` ${icon} Reforge `,
+      popupCmd,
+    ], { detached: true, stdio: "ignore" });
+    child.unref();
   }
 
   writeOutput({
