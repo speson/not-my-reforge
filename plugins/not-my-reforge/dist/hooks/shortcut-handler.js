@@ -8,6 +8,17 @@ import { loadNotepad, addNote } from "../lib/notepad/storage.js";
 import { analyzeTask, selectMode, buildExecutionContext } from "../lib/orchestration/router.js";
 const SHORTCUT_NAMES = ["orch", "verify", "team", "search", "review", "qa", "status", "memo"];
 const SHORTCUT_REGEX = new RegExp(`#(${SHORTCUT_NAMES.join("|")})\\b`, "i");
+// Popup color themes per shortcut: [bg 256-color, fg 256-color, icon]
+const SHORTCUT_THEMES = {
+    orch: [55, 230, "🎯"], // purple
+    verify: [22, 230, "✅"], // green
+    team: [24, 230, "👥"], // blue
+    search: [130, 230, "🔍"], // orange
+    review: [124, 230, "📝"], // red
+    qa: [30, 230, "🧪"], // teal
+    status: [240, 230, "📊"], // grey
+    memo: [94, 230, "📌"], // amber
+};
 const SHORTCUTS = [
     // #orch — Smart orchestration: auto-select optimal mode and execute
     {
@@ -311,6 +322,21 @@ async function main() {
         ? `[#${shortcutName}] ${context.slice(0, 60)}${context.length > 60 ? "..." : ""}`
         : `[#${shortcutName}]`;
     writeError(label);
+    // tmux popup for visible feedback (non-blocking)
+    if (process.env.TMUX) {
+        try {
+            const { spawn } = await import("child_process");
+            const safeLabel = label.replace(/'/g, "'\\''");
+            const [bg, fg, icon] = SHORTCUT_THEMES[shortcutName] || [24, 230, "⚡"];
+            const popup = spawn("tmux", [
+                "display-popup", "-E",
+                "-w", "60", "-h", "7",
+                `printf '\\033[48;5;${bg}m'; clear; printf '\\033[48;5;${bg};38;5;${fg};1m\\n\\n    ${icon} %s\\n\\n' '${safeLabel}'; sleep 2`,
+            ], { detached: true, stdio: "ignore" });
+            popup.unref();
+        }
+        catch { }
+    }
     writeOutput({
         hookSpecificOutput: {
             hookEventName: "PostToolUse",
