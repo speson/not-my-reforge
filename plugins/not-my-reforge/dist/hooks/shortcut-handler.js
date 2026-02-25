@@ -322,9 +322,7 @@ async function main() {
         ? `[#${shortcutName}] ${context.slice(0, 60)}${context.length > 60 ? "..." : ""}`
         : `[#${shortcutName}]`;
     writeError(label);
-    // tmux popup for visible feedback (non-blocking)
-    // Check TMUX env first; fallback to `tmux info` for cases where
-    // the parent process (Claude Code) may not pass TMUX env to hooks
+    // tmux popup for visible feedback (fully detached via nohup + &)
     try {
         const { execSync, spawn } = await import("child_process");
         const inTmux = process.env.TMUX || (() => {
@@ -339,12 +337,9 @@ async function main() {
         if (inTmux) {
             const safeLabel = label.replace(/'/g, "'\\''");
             const [bg, fg, icon] = SHORTCUT_THEMES[shortcutName] || [24, 230, "⚡"];
-            const popup = spawn("tmux", [
-                "display-popup", "-E",
-                "-w", "60", "-h", "7",
-                `printf '\\033[48;5;${bg}m'; clear; printf '\\033[48;5;${bg};38;5;${fg};1m\\n\\n    ${icon} %s\\n\\n' '${safeLabel}'; sleep 2`,
-            ], { detached: true, stdio: "ignore" });
-            popup.unref();
+            spawn("sh", ["-c",
+                `nohup tmux display-popup -E -w 60 -h 7 "printf '\\033[48;5;${bg}m'; clear; printf '\\033[48;5;${bg};38;5;${fg};1m\\n\\n    ${icon} %s\\n\\n' '${safeLabel}'; sleep 2" </dev/null >/dev/null 2>&1 &`,
+            ], { stdio: "ignore" });
         }
     }
     catch { }
