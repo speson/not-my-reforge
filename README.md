@@ -123,18 +123,20 @@ All commands prefixed with `/not-my-reforge:` (e.g. `/not-my-reforge:quick`)
 | `reforge parallel <task>` | Parallel subtask execution |
 | `reforge cancel [target]` | Cancel active mode |
 
-**Shortcuts** (`#` prefix, anywhere in prompt — shows `[#shortcut]` confirmation on match):
+**Shortcuts** (`#` prefix, anywhere in prompt — shows color-coded tmux popup on match):
 
-| Shortcut | Effect |
-|----------|--------|
-| `#orch [task]` | Smart orchestration |
-| `#verify` | Quality gate checks |
-| `#search <query>` | DeepSearch (5 strategies) |
-| `#review [base]` | Multi-perspective review |
-| `#qa [target]` | Auto QA loop |
-| `#team` | Team status |
-| `#status` | Session metrics |
-| `#memo [text]` | Session notes (`!` = critical) |
+| Shortcut | Color | Effect |
+|----------|-------|--------|
+| `#orch [task]` | 🟣 Purple | Smart orchestration |
+| `#verify` | 🟢 Green | Quality gate checks |
+| `#search <query>` | 🟠 Orange | DeepSearch (5 strategies) |
+| `#review [base]` | 🔴 Red | Multi-perspective review |
+| `#qa [target]` | 🩵 Teal | Auto QA loop |
+| `#team` | 🔵 Blue | Team status |
+| `#status` | ⚫ Grey | Session metrics |
+| `#memo [text]` | 🟤 Amber | Session notes (`!` = critical) |
+
+In tmux, each shortcut shows a centered popup (2s) with its theme color. Falls back to stderr outside tmux.
 
 ## Hooks
 
