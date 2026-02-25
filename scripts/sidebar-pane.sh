@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sidebar-pane.sh — Unified sidebar: Shortcut + Todo + Git Diff
+# sidebar-pane.sh — Unified sidebar: Shortcut + Todo + File Changes
 # Usage: bash sidebar-pane.sh <project-cwd>
 # Polls data sources every 2s, re-renders on change
 
@@ -9,6 +9,7 @@ CWD="${1:-.}"
 TODO_FILE="${CWD}/.reforge/todo-state.json"
 MODE_FILE="${CWD}/.reforge/mode-registry.json"
 SHORTCUT_FILE="${CWD}/.reforge/shortcut-state.json"
+METRICS_FILE="${CWD}/.reforge/session-metrics.json"
 
 # Colors
 C_RESET="\033[0m"
@@ -26,8 +27,6 @@ S_ACTIVE="◆"
 S_PENDING="○"
 
 last_hash=""
-git_cache=""
-git_cache_time=0
 
 # Read version from package.json
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$CWD}"
@@ -240,78 +239,82 @@ render_todo() {
   fi
 }
 
-# ── Git Diff Section ─────────────────────────────────────
+# ── File Changes Section ─────────────────────────────────
 
-render_git() {
+render_file_changes() {
   local width="$1"
 
   echo ""
-  echo -e "  ${C_BOLD}${C_CYAN}GIT DIFF${C_RESET}"
+  echo -e "  ${C_BOLD}${C_CYAN}FILE CHANGES${C_RESET}"
 
-  # Cache git output for 5 seconds
-  local now
-  now=$(date +%s)
-  if [[ $((now - git_cache_time)) -ge 5 || -z "$git_cache" ]]; then
-    git_cache=$(cd "$CWD" && git diff --numstat HEAD 2>/dev/null || true)
-    git_cache_time=$now
-  fi
-
-  if [[ -z "$git_cache" ]]; then
-    echo -e "  ${C_DIM}Clean${C_RESET}"
+  if [[ ! -f "$METRICS_FILE" ]]; then
+    echo -e "  ${C_DIM}No changes${C_RESET}"
     return
   fi
 
-  # Count files
-  local file_count=0
-  file_count=$(echo "$git_cache" | grep -c '.' || true)
-  echo -e "  ${C_DIM}${file_count} files changed${C_RESET}"
+  # Read filesModified from session-metrics.json
+  local files=()
+  if command -v jq &>/dev/null; then
+    while IFS= read -r fpath; do
+      [[ -z "$fpath" ]] && continue
+      # Convert absolute path to relative
+      if [[ "$fpath" == "$CWD/"* ]]; then
+        fpath="${fpath#$CWD/}"
+      fi
+      files+=("$fpath")
+    done < <(jq -r '.filesModified[]? // empty' "$METRICS_FILE" 2>/dev/null)
+  else
+    # Node fallback
+    local node_bin=""
+    if command -v node &>/dev/null; then node_bin="node"
+    elif [[ -x "$HOME/.volta/bin/node" ]]; then node_bin="$HOME/.volta/bin/node"
+    elif [[ -x "$HOME/.nvm/current/bin/node" ]]; then node_bin="$HOME/.nvm/current/bin/node"
+    fi
+    if [[ -n "$node_bin" ]]; then
+      while IFS= read -r fpath; do
+        [[ -z "$fpath" ]] && continue
+        if [[ "$fpath" == "$CWD/"* ]]; then
+          fpath="${fpath#$CWD/}"
+        fi
+        files+=("$fpath")
+      done < <("$node_bin" -e "
+        const d=JSON.parse(require('fs').readFileSync('$METRICS_FILE','utf-8'));
+        (d.filesModified||[]).forEach(f=>console.log(f));
+      " 2>/dev/null)
+    fi
+  fi
+
+  local file_count=${#files[@]}
+
+  if [[ $file_count -eq 0 ]]; then
+    echo -e "  ${C_DIM}No changes${C_RESET}"
+    return
+  fi
+
+  echo -e "  ${C_DIM}${file_count} file(s) modified${C_RESET}"
   echo ""
 
-  # Per-file stats: numstat format is "added\tremoved\tfilename"
-  # Layout per row: "  [fname][gap][stat]" — fname expands to fill available space
-  # row_usable = width - 2(indent) - 1(min gap) = width - 3
+  local max_name=$((width - 6))
 
-  local row_usable=$((width - 4))
+  for fname in "${files[@]}"; do
+    # Determine file extension for color hint
+    local color="$C_DIM"
+    case "$fname" in
+      *.ts|*.tsx) color="$C_CYAN" ;;
+      *.js|*.jsx) color="$C_YELLOW" ;;
+      *.sh)       color="$C_GREEN" ;;
+      *.md)       color="$C_MAGENTA" ;;
+      *.json)     color="$C_DIM" ;;
+    esac
 
-  while IFS=$'\t' read -r added removed fname; do
-    [[ -z "$fname" ]] && continue
-
-    # Build stat string to measure its length
-    local stat=""
-    [[ "$added" != "0" && "$added" != "-" ]] && stat="+${added}"
-    if [[ "$removed" != "0" && "$removed" != "-" ]]; then
-      [[ -n "$stat" ]] && stat+=" "
-      stat+="-${removed}"
-    fi
-    local stat_len=${#stat}
-
-    # fname gets remaining space
-    local fname_col=$((row_usable - stat_len))
-    if [[ $fname_col -lt 4 ]]; then fname_col=4; fi
-
-    # Truncate fname from right
-    if [[ ${#fname} -gt $fname_col ]]; then
-      fname="${fname:0:$((fname_col - 2))}.."
+    # Truncate long filenames
+    local display="$fname"
+    if [[ ${#display} -gt $max_name ]]; then
+      display="..${display: -$((max_name - 2))}"
     fi
 
-    # Manually pad fname with spaces (avoid printf ANSI interaction)
-    local fname_padded="$fname"
-    local fname_pad=$((fname_col - ${#fname}))
-    if [[ $fname_pad -gt 0 ]]; then
-      fname_padded+=$(printf '%*s' "$fname_pad" "")
-    fi
-
-    # Build line: indent + dim fname + space + colored stat
-    local line="  ${C_DIM}${fname_padded}${C_RESET} "
-    if [[ "$added" != "0" && "$added" != "-" ]]; then
-      line+="${C_GREEN}+${added}${C_RESET}"
-      [[ "$removed" != "0" && "$removed" != "-" ]] && line+=" "
-    fi
-    if [[ "$removed" != "0" && "$removed" != "-" ]]; then
-      line+="${C_RED}-${removed}${C_RESET}"
-    fi
-    echo -e "$line"
-  done <<< "$git_cache"
+    echo -e "  ${color}${display}${C_RESET}"
+  done
 }
 
 # ── Main Render ──────────────────────────────────────────
@@ -337,7 +340,7 @@ render() {
   render_todo "$width"
   echo ""
   print_separator "$width"
-  render_git "$width"
+  render_file_changes "$width"
   echo ""
 }
 
@@ -354,7 +357,9 @@ compute_hash() {
   if [[ -f "$SHORTCUT_FILE" ]]; then
     h+=$(md5 -q "$SHORTCUT_FILE" 2>/dev/null || md5sum "$SHORTCUT_FILE" 2>/dev/null | cut -d' ' -f1 || echo "s")
   fi
-  # git diff changes are detected by the 5s cache refresh, not hashing
+  if [[ -f "$METRICS_FILE" ]]; then
+    h+=$(md5 -q "$METRICS_FILE" 2>/dev/null || md5sum "$METRICS_FILE" 2>/dev/null | cut -d' ' -f1 || echo "f")
+  fi
   echo "$h"
 }
 
@@ -364,11 +369,7 @@ render
 while true; do
   current_hash=$(compute_hash)
 
-  # Re-render if data files changed OR every 5s (for git diff refresh)
-  now_ts=$(date +%s)
-  since_git=$((now_ts - git_cache_time))
-
-  if [[ "$current_hash" != "$last_hash" || $since_git -ge 5 ]]; then
+  if [[ "$current_hash" != "$last_hash" ]]; then
     render
     last_hash="$current_hash"
   fi

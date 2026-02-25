@@ -4,7 +4,8 @@ import { readStdin, writeOutput } from "../lib/io.js";
 import { writeDataFile } from "../lib/storage.js";
 import { loadRegistry, saveRegistry } from "../lib/mode-registry/registry.js";
 import { EMPTY_METRICS } from "../lib/metrics/types.js";
-import { existsSync, readFileSync } from "node:fs";
+import { loadMetrics } from "../lib/metrics/tracker.js";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { join } from "node:path";
 function exec(cmd, cwd) {
@@ -15,7 +16,7 @@ function exec(cmd, cwd) {
         return "";
     }
 }
-function resetSidebarState(cwd) {
+function resetSidebarState(cwd, source) {
     const now = new Date().toISOString();
     // 1. Reset task tracker state
     writeDataFile(cwd, "todo-state.json", { tasks: [], updatedAt: now });
@@ -26,44 +27,52 @@ function resetSidebarState(cwd) {
     registry.activeMode = null;
     registry.cancelSentinel = null;
     saveRegistry(cwd, registry);
-    // 4. Reset session metrics with new sessionId
-    const newSessionId = `session-${Date.now()}`;
-    writeDataFile(cwd, "session-metrics.json", {
-        ...EMPTY_METRICS,
-        sessionId: newSessionId,
-        startedAt: now,
-        lastActivityAt: now,
-    });
+    // 4. Reset session metrics only on startup (preserve across resume for file tracking)
+    if (source === "startup") {
+        const newSessionId = `session-${Date.now()}`;
+        writeDataFile(cwd, "session-metrics.json", {
+            ...EMPTY_METRICS,
+            sessionId: newSessionId,
+            startedAt: now,
+            lastActivityAt: now,
+        });
+    }
 }
 async function main() {
     const input = await readStdin();
     const cwd = input.cwd;
     const source = input.source || "startup";
+    // DEBUG: log hook input to /tmp for diagnosis
+    try {
+        writeFileSync("/tmp/reforge-session-debug.json", JSON.stringify({ ts: new Date().toISOString(), cwd, source, inputKeys: Object.keys(input) }, null, 2));
+    }
+    catch { /* ignore */ }
     if (!cwd || !existsSync(cwd))
         process.exit(0);
     // Reset sidebar state on session start to prevent stale data from previous sessions
-    resetSidebarState(cwd);
+    try {
+        resetSidebarState(cwd, source);
+    }
+    catch (e) {
+        writeFileSync("/tmp/reforge-reset-error.log", String(e));
+    }
     const sections = [];
-    // 1. Git status summary
+    // 1. Git info (branch + last commit)
     const isGit = exec("git rev-parse --is-inside-work-tree", cwd);
     if (isGit === "true") {
         const branch = exec("git branch --show-current", cwd) || "detached";
         const lastCommit = exec("git log -1 --oneline", cwd) || "no commits";
-        const modified = exec("git diff --stat --shortstat", cwd);
-        const staged = exec("git diff --cached --shortstat", cwd);
-        const untrackedCount = exec("git ls-files --others --exclude-standard", cwd)
-            .split("\n")
-            .filter(Boolean).length;
-        let gitLine = `Git: branch '${branch}', last commit: ${lastCommit}`;
-        if (modified)
-            gitLine += `\n   Modified: ${modified}`;
-        if (staged)
-            gitLine += `\n   Staged: ${staged}`;
-        if (untrackedCount > 0)
-            gitLine += `\n   Untracked files: ${untrackedCount}`;
-        sections.push(gitLine);
+        sections.push(`Git: branch '${branch}', last commit: ${lastCommit}`);
     }
-    // 2. Detect project type
+    // 2. Session file activity (files modified during this session)
+    const metrics = loadMetrics(cwd);
+    if (metrics.filesModified.length > 0) {
+        const relFiles = metrics.filesModified
+            .map((f) => (f.startsWith(cwd) ? f.slice(cwd.length + 1) : f));
+        const fileList = relFiles.map((f) => `   ${f}`).join("\n");
+        sections.push(`Session changes (${relFiles.length} files):\n${fileList}`);
+    }
+    // 3. Detect project type
     const projectChecks = [
         ["package.json", "Node.js"],
         ["tsconfig.json", "TypeScript"],
@@ -86,7 +95,7 @@ async function main() {
     if (types.size > 0) {
         sections.push(`Project type: ${[...types].join(", ")}`);
     }
-    // 3. Handoff file
+    // 4. Handoff file
     const handoffPath = join(cwd, ".claude", "handoff.md");
     if (existsSync(handoffPath)) {
         if (source === "resume") {
@@ -103,7 +112,7 @@ async function main() {
             sections.push("Handoff note available at .claude/handoff.md");
         }
     }
-    // 4. Active TODOs in changed files
+    // 5. Active TODOs in changed files
     if (isGit === "true") {
         const changedFiles = exec("git diff --name-only HEAD", cwd)
             .split("\n")
