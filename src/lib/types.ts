@@ -35,6 +35,12 @@ export interface PreToolUseInput extends HookInput {
   tool_input: Record<string, unknown>;
 }
 
+export interface PermissionRequestInput extends HookInput {
+  tool_name: string;
+  tool_input: Record<string, unknown>;
+  permission_mode?: string;
+}
+
 export interface PostToolUseInput extends HookInput {
   tool_name: string;
   tool_input: Record<string, unknown>;
@@ -63,7 +69,7 @@ export interface UserPromptSubmitInput extends HookInput {
 
 // Hook output types
 export interface HookOutput {
-  hookSpecificOutput?: PreToolUseOutput | PostToolUseOutput | UserPromptSubmitOutput | SessionStartOutput | StopOutput | PreCompactOutput;
+  hookSpecificOutput?: PreToolUseOutput | PermissionRequestOutput | PostToolUseOutput | UserPromptSubmitOutput | SessionStartOutput | StopOutput | PreCompactOutput;
 }
 
 export interface PreToolUseOutput {
@@ -71,6 +77,14 @@ export interface PreToolUseOutput {
   permissionDecision?: "allow" | "deny";
   permissionDecisionReason?: string;
   additionalContext?: string;
+}
+
+export interface PermissionRequestOutput {
+  hookEventName: "PermissionRequest";
+  decision: {
+    behavior: "allow" | "deny";
+    message?: string;
+  };
 }
 
 export interface PostToolUseOutput {

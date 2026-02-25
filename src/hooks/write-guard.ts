@@ -55,7 +55,15 @@ async function main() {
     }
   }
 
-  if (yoloActive) process.exit(0);
+  if (yoloActive) {
+    writeOutput({
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "allow",
+      },
+    });
+    return;
+  }
 
   if (!existsSync(filePath)) process.exit(0);
 

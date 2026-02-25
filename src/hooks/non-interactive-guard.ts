@@ -95,7 +95,15 @@ function isInteractive(command: string): { blocked: boolean; reason: string } {
 async function main() {
   const input = await readStdin<PreToolUseInput>();
 
-  if (input.cwd && isYoloEnabled(input.cwd)) process.exit(0);
+  if (input.cwd && isYoloEnabled(input.cwd)) {
+    writeOutput({
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "allow",
+      },
+    });
+    return;
+  }
 
   if (input.tool_name !== "Bash") process.exit(0);
 

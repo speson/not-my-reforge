@@ -2,6 +2,9 @@
 // Event: SessionStart (startup|resume)
 
 import { readStdin, writeOutput } from "../lib/io.js";
+import { writeDataFile } from "../lib/storage.js";
+import { loadRegistry, saveRegistry } from "../lib/mode-registry/registry.js";
+import { EMPTY_METRICS } from "../lib/metrics/types.js";
 import { existsSync, readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { join } from "node:path";
@@ -15,12 +18,40 @@ function exec(cmd: string, cwd: string): string {
   }
 }
 
+function resetSidebarState(cwd: string): void {
+  const now = new Date().toISOString();
+
+  // 1. Reset task tracker state
+  writeDataFile(cwd, "todo-state.json", { tasks: [], updatedAt: now });
+
+  // 2. Reset shortcut state
+  writeDataFile(cwd, "shortcut-state.json", { lastShortcut: null });
+
+  // 3. Reset mode registry (preserve history)
+  const registry = loadRegistry(cwd);
+  registry.activeMode = null;
+  registry.cancelSentinel = null;
+  saveRegistry(cwd, registry);
+
+  // 4. Reset session metrics with new sessionId
+  const newSessionId = `session-${Date.now()}`;
+  writeDataFile(cwd, "session-metrics.json", {
+    ...EMPTY_METRICS,
+    sessionId: newSessionId,
+    startedAt: now,
+    lastActivityAt: now,
+  });
+}
+
 async function main() {
   const input = await readStdin<SessionStartInput>();
   const cwd = input.cwd;
   const source = input.source || "startup";
 
   if (!cwd || !existsSync(cwd)) process.exit(0);
+
+  // Reset sidebar state on session start to prevent stale data from previous sessions
+  resetSidebarState(cwd);
 
   const sections: string[] = [];
 

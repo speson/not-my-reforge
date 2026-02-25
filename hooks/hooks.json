@@ -108,6 +108,18 @@
         ]
       }
     ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" permission-bypass.js",
+            "timeout": 5,
+            "statusMessage": "Checking yolo mode..."
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Write",
