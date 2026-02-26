@@ -354,6 +354,12 @@
           },
           {
             "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" sidebar-close.js",
+            "timeout": 5,
+            "async": true
+          },
+          {
+            "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" session-state-save.js",
             "timeout": 5,
             "async": true
