@@ -3,6 +3,7 @@
 
 import { readStdin } from "../lib/io.js";
 import { execSync } from "node:child_process";
+import { unlinkSync } from "node:fs";
 import type { SessionStartInput } from "../lib/types.js";
 
 const PANE_TITLE = "reforge-sidebar";
@@ -23,6 +24,13 @@ async function main() {
 
     if (panes.split("\n").includes(PANE_TITLE)) {
       process.exit(0);
+    }
+
+    // Remove stale close signal from previous session
+    try {
+      unlinkSync(`${cwd}/.reforge/sidebar-close-signal`);
+    } catch {
+      // file doesn't exist — fine
     }
 
     // Spawn sidebar pane (right side, 40 cols, detached)
