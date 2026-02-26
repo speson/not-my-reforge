@@ -4,7 +4,26 @@
 
 *not oh-my. reforged.*
 
-AI agent orchestration, quality hooks, and smart routing for Claude Code — reforged from oh-my-opencode and oh-my-claudecode.
+**[한국어](README.ko.md)** | English
+
+Your Claude Code shouldn't need a babysitter.
+
+**not-my-reforge** teaches your AI agent to earn trust, fix its own mistakes, and orchestrate itself — so you can stop micromanaging prompts and start shipping.
+
+> oh-my-\* gave agents commands. We gave them autonomy.
+
+### Why this exists
+
+Most Claude Code plugins give you more buttons to press. We took the opposite approach: **fewer decisions for you, better decisions by the agent.**
+
+- **Progressive Trust** — The agent starts cautious and earns permissions through proven competence. Not a toggle. A reputation system.
+- **Self-healing loops** — Build failed? The agent doesn't just tell you. It reads the error, consults the Failure Playbook, and fixes it. Then runs the build again.
+- **Quality that isn't optional** — Every edit, every build, every test contributes to a session Quality Score. No more "it works on my machine" energy.
+- **Team-scale orchestration** — One task, multiple agents, isolated worktrees, automatic merge. You describe the goal. The swarm figures out the rest.
+
+Zero runtime dependencies. Pure hooks architecture. No setup wizard. No config ceremony.
+
+Just install and let it cook.
 
 ## Install
 
@@ -297,6 +316,19 @@ not-my-reforge/
 ├── .gitignore
 └── README.md
 ```
+
+## Where this is going
+
+We're not building a bigger plugin. We're building a smaller gap between *intent* and *done*.
+
+- **Agent memory that compounds** — Sessions shouldn't start from zero. Patterns learned today should accelerate tomorrow.
+- **Trust that transfers** — Prove competence on one project, carry reputation to the next.
+- **Orchestration that disappears** — The best workflow is the one you never have to think about. `#orch` is step one. Invisible routing is the destination.
+- **Quality as culture, not ceremony** — Gates that teach, not gates that block. Every failure is a playbook entry waiting to happen.
+
+The end state? You describe what you want. The agent figures out how, proves it works, and asks only when it genuinely doesn't know.
+
+We're not there yet. But every release gets closer.
 
 ## Requirements
 
