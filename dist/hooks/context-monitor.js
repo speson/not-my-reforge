@@ -27,6 +27,24 @@ async function main() {
     saveMetrics(cwd, metrics);
     // Check context usage
     const usage = metrics.estimatedTokens / CONTEXT_THRESHOLDS.maxTokens;
+    if (usage >= CONTEXT_THRESHOLDS.urgent) {
+        writeError([
+            `URGENT: Context window at ~${Math.round(usage * 100)}%.`,
+            "You MUST run /compact NOW to avoid context overflow.",
+            "Before compacting, save critical context with #memo !<note>.",
+            "Consider delegating remaining work to subagents (they get fresh context).",
+        ].join("\n"));
+        writeOutput({
+            hookSpecificOutput: {
+                hookEventName: "PostToolUse",
+                additionalContext: [
+                    `CRITICAL: Context at ~${Math.round(usage * 100)}%. Run /compact immediately.`,
+                    "Active state will be preserved through compaction automatically.",
+                ].join(" "),
+            },
+        });
+        return;
+    }
     if (usage >= CONTEXT_THRESHOLDS.critical) {
         writeError([
             `Context window critically high (~${Math.round(usage * 100)}% estimated).`,
@@ -35,7 +53,6 @@ async function main() {
             "  - Delegate subtasks to agents (they get fresh context)",
             "  - Save important notes to notepad before compaction",
         ].join("\n"));
-        // Don't block, just warn
         process.exit(0);
     }
     if (usage >= CONTEXT_THRESHOLDS.warn) {

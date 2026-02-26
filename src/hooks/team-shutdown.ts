@@ -5,10 +5,10 @@
 import { readStdin, writeOutput } from "../lib/io.js";
 import { loadTeamState, saveTeamState, allWorkersDone } from "../lib/team/state.js";
 import { detectFileOverlaps, suggestMergeOrder, formatMergeReport } from "../lib/team/merge.js";
-import type { HookInput } from "../lib/types.js";
+import type { StopInput } from "../lib/types.js";
 
 async function main() {
-  const input = await readStdin<HookInput>();
+  const input = await readStdin<StopInput>();
   const cwd = input.cwd;
 
   if (!cwd) process.exit(0);
@@ -78,7 +78,7 @@ async function main() {
 
   writeOutput({
     hookSpecificOutput: {
-      hookEventName: "PostToolUse" as const,
+      hookEventName: "Stop" as const,
       additionalContext: sections.join("\n"),
     },
   });

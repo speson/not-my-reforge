@@ -104,6 +104,23 @@ async function main() {
     );
   }
 
+  // Preserve circuit-breaker state (tracks repeated tool failures)
+  const cbState = readDataFile<{ failures?: Record<string, { count: number; lastError: string }> } | null>(cwd, "circuit-breaker.json", null);
+  if (cbState?.failures) {
+    const entries = Object.entries(cbState.failures).filter(([, v]) => v.count >= 2);
+    if (entries.length > 0) {
+      const lines = entries.map(([tool, v]) => `  ${tool}: ${v.count}x — ${v.lastError}`);
+      sections.push(`[Circuit Breaker — Active Failures]\n${lines.join("\n")}\nAvoid repeating these failing approaches.`);
+    }
+  }
+
+  // Preserve session file tracking
+  const sessionMetrics = readDataFile<{ filesModified?: string[]; totalToolCalls?: number } | null>(cwd, "session-metrics.json", null);
+  if (sessionMetrics?.filesModified && sessionMetrics.filesModified.length > 0) {
+    const files = sessionMetrics.filesModified.slice(-15).map((f) => `  ${f}`);
+    sections.push(`[Session Files Modified (${sessionMetrics.filesModified.length} total)]\n${files.join("\n")}`);
+  }
+
   if (sections.length > 0) {
     writeOutput({
       hookSpecificOutput: {

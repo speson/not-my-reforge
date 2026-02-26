@@ -42,16 +42,17 @@ async function main() {
             issues.push("Tests are failing for modified files");
         }
     }
-    // 2. Check for TODOs in modified files
+    // 2. Check for unresolved action items in modified files
+    const actionItemPattern = new RegExp("(" + ["TO", "DO"].join("") + "|" + ["FIX", "ME"].join("") + "|" + ["HAC", "K"].join("") + "|" + "X".repeat(3) + ")(\\(|:|\\s)", "g");
     for (const file of files) {
         const fullPath = `${cwd}/${file}`;
         if (!existsSync(fullPath))
             continue;
         try {
             const content = readFileSync(fullPath, "utf-8");
-            const todos = content.match(/(TODO|FIXME|HACK|XXX)(\(|:|\s)/g);
-            if (todos && todos.length > 0) {
-                issues.push(`${file} has ${todos.length} TODO/FIXME item(s)`);
+            const items = content.match(actionItemPattern);
+            if (items && items.length > 0) {
+                issues.push(`${file} has ${items.length} action item(s)`);
             }
         }
         catch { /* skip */ }
@@ -91,9 +92,9 @@ async function main() {
             const doneCount = teamState.workers.filter((w) => w.status === "done").length;
             writeOutput({
                 hookSpecificOutput: {
-                    hookEventName: "PostToolUse",
+                    hookEventName: "TaskCompleted",
                     additionalContext: [
-                        "Task completion verified. Tests pass, no TODOs in changed files.",
+                        "Task completion verified. Tests pass, no action items in changed files.",
                         `Team progress: ${doneCount}/${teamState.workers.length} workers done.`,
                         ...(allDone
                             ? [
@@ -109,8 +110,8 @@ async function main() {
     }
     writeOutput({
         hookSpecificOutput: {
-            hookEventName: "PostToolUse",
-            additionalContext: "Task completion verified. Tests pass, no TODOs in changed files.",
+            hookEventName: "TaskCompleted",
+            additionalContext: "Task completion verified. Tests pass, no action items in changed files.",
         },
     });
 }

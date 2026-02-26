@@ -69,7 +69,7 @@ export interface UserPromptSubmitInput extends HookInput {
 
 // Hook output types
 export interface HookOutput {
-  hookSpecificOutput?: PreToolUseOutput | PermissionRequestOutput | PostToolUseOutput | UserPromptSubmitOutput | SessionStartOutput | StopOutput | PreCompactOutput;
+  hookSpecificOutput?: PreToolUseOutput | PermissionRequestOutput | PostToolUseOutput | UserPromptSubmitOutput | SessionStartOutput | StopOutput | TeammateIdleOutput | TaskCompletedOutput | PreCompactOutput;
 }
 
 export interface PreToolUseOutput {
@@ -108,7 +108,23 @@ export interface StopOutput {
   additionalContext?: string;
 }
 
+export interface TeammateIdleOutput {
+  hookEventName: "TeammateIdle";
+  additionalContext?: string;
+}
+
+export interface TaskCompletedOutput {
+  hookEventName: "TaskCompleted";
+  additionalContext?: string;
+}
+
 export interface PreCompactOutput {
   hookEventName: "PreCompact";
   systemMessage?: string;
+}
+
+export interface PostToolUseFailureInput extends HookInput {
+  tool_name: string;
+  tool_input: Record<string, unknown>;
+  tool_response: ToolResponse;
 }

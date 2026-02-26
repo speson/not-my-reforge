@@ -32,6 +32,12 @@
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" sidebar-open.js",
             "timeout": 10,
             "statusMessage": "Opening sidebar..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" directory-agent-injector.js",
+            "timeout": 10,
+            "statusMessage": "Scanning project structure..."
           }
         ]
       }
@@ -122,7 +128,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Write",
+        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
@@ -357,6 +363,12 @@
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" code-simplifier.js",
             "timeout": 15,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" session-recovery.js",
+            "timeout": 10,
             "async": true
           }
         ]

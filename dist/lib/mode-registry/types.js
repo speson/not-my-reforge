@@ -8,6 +8,7 @@ export const MODE_CONFLICTS = {
     swarm: [], // swarm can coexist with orchestration modes
     qa: ["ralph", "autopilot", "pipeline", "ralplan"],
     ralplan: ["ralph", "autopilot", "pipeline", "qa"],
+    ultrawork: [], // ultrawork is one-shot, no conflicts
 };
 export const CANCEL_TTL_MS = 30_000; // 30 seconds
 export const EMPTY_REGISTRY = {

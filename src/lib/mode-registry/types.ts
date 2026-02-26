@@ -1,6 +1,6 @@
 // Mode registry types — central mode state management
 
-export type ModeName = "ralph" | "autopilot" | "pipeline" | "team" | "swarm" | "qa" | "ralplan";
+export type ModeName = "ralph" | "autopilot" | "pipeline" | "team" | "swarm" | "qa" | "ralplan" | "ultrawork";
 
 export interface ActiveMode {
   name: ModeName;
@@ -36,6 +36,7 @@ export const MODE_CONFLICTS: Record<ModeName, ModeName[]> = {
   swarm: [], // swarm can coexist with orchestration modes
   qa: ["ralph", "autopilot", "pipeline", "ralplan"],
   ralplan: ["ralph", "autopilot", "pipeline", "qa"],
+  ultrawork: [], // ultrawork is one-shot, no conflicts
 };
 
 export const CANCEL_TTL_MS = 30_000; // 30 seconds

@@ -61,6 +61,19 @@ export function selectMode(signals: TaskSignals): OrchRecommendation {
     };
   }
 
+  // Ultrawork: large multi-task + complex/critical scope → all agents in parallel
+  if (
+    signals.isMultiTask &&
+    (signals.isResearch || signals.isPlanning || signals.isQualityCritical)
+  ) {
+    return {
+      mode: "ultrawork",
+      confidence: 0.8,
+      reason: `${signals.taskCount}개 복합 태스크 + 높은 중요도 → Ultrawork (전체 에이전트 병렬)`,
+      tasks: signals.tasks,
+    };
+  }
+
   // Team: multiple independent tasks → parallel with tmux
   if (signals.isMultiTask) {
     const workerCount = Math.min(signals.taskCount, 5);
@@ -356,6 +369,46 @@ function buildRalplanContext(
   ].join("\n");
 }
 
+function buildUltraworkContext(task: string, rec: OrchRecommendation): string {
+  return [
+    "=== Auto-Orchestration: Ultrawork ===",
+    "",
+    `Goal: ${task}`,
+    `Mode: ultrawork (all agents, maximum parallel execution)`,
+    `Confidence: ${Math.round(rec.confidence * 100)}%`,
+    `Reason: ${rec.reason}`,
+    "",
+    "Subtasks identified:",
+    ...rec.tasks.map((t, i) => `  ${i + 1}. ${t}`),
+    "",
+    "EXECUTE NOW:",
+    "",
+    "Phase 1 — Decompose: identify which agents are relevant for each subtask.",
+    "",
+    "Phase 2 — Launch ALL relevant agents in PARALLEL (one message, run_in_background: true):",
+    `  - oracle-deep:       "Analyze architecture implications of: ${task}"`,
+    `  - security-reviewer: "Audit security considerations for: ${task}"`,
+    `  - test-engineer:     "Design test strategy for: ${task}"`,
+    `  - analyst:           "Decompose requirements for: ${task}"`,
+    `  - build-fixer:       "Identify build/compilation risks for: ${task}"`,
+    "  - designer:          (add if UI is involved)",
+    "Signal: [UW:DISPATCHED]",
+    "",
+    "Phase 3 — Implement core subtasks while agents run.",
+    "",
+    "Phase 4 — Aggregate all agent results:",
+    "  - Merge findings (security, quality, tests)",
+    "  - Apply fixes and recommendations",
+    "Signal: [UW:AGGREGATING]",
+    "",
+    "Phase 5 — Full verification:",
+    "  npm run build --if-present",
+    "  npm test --if-present",
+    "  npm run lint --if-present",
+    "Signal: [UW:VERIFIED] → [UW:DONE]",
+  ].join("\n");
+}
+
 // ---- Main Export ----
 
 export function buildExecutionContext(
@@ -378,5 +431,7 @@ export function buildExecutionContext(
       return buildQAContext(task, rec);
     case "ralplan":
       return buildRalplanContext(task, rec);
+    case "ultrawork":
+      return buildUltraworkContext(task, rec);
   }
 }

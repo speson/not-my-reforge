@@ -173,6 +173,25 @@ const KEYWORD_HANDLERS = [
             ].join("\n"),
         };
     },
+    // reforge ultrawork — maximum parallel agent execution
+    (prompt) => {
+        const match = prompt.match(/^reforge\s+ultrawork\s+(.+)/i);
+        if (!match)
+            return null;
+        return {
+            keyword: "ultrawork",
+            context: [
+                "[Reforge Ultrawork Mode]",
+                "Activate ALL available specialized agents in maximum parallel execution.",
+                "Decompose the task into subtasks and dispatch relevant agents simultaneously via the Task tool (run_in_background: true).",
+                "Agents: oracle-deep (analysis), analyst (requirements), security-reviewer (security), test-engineer (tests), build-fixer (errors), reviewer (quality), designer (UI if relevant).",
+                "Aggregate all agent results before finalizing implementation.",
+                "Run full verification (build, test, lint) before concluding.",
+                "Signals: [UW:DISPATCHED] → [UW:AGGREGATING] → [UW:VERIFIED] → [UW:DONE]",
+                `Task: ${match[1]}`,
+            ].join("\n"),
+        };
+    },
 ];
 async function main() {
     const input = await readStdin();

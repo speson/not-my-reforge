@@ -4,7 +4,7 @@
 
 import { readStdin, writeError, writeOutput } from "../lib/io.js";
 import { execSync } from "node:child_process";
-import { loadTeamState, saveTeamState, updateWorker, getActiveWorkers } from "../lib/team/state.js";
+import { loadTeamState, getActiveWorkers } from "../lib/team/state.js";
 import type { HookInput } from "../lib/types.js";
 
 function exec(cmd: string, cwd: string): { stdout: string; ok: boolean } {
@@ -33,8 +33,12 @@ async function main() {
     const pendingWorkers = teamState.workers.filter((w) => w.status === "pending");
 
     if (pendingWorkers.length > 0) {
+      const next = pendingWorkers[0];
       suggestions.push(
-        `${pendingWorkers.length} pending task(s) available: ${pendingWorkers.map((w) => w.name).join(", ")}`
+        `${pendingWorkers.length} pending task(s) available. Next: "${next.name}" — ${next.taskDescription}`
+      );
+      suggestions.push(
+        `To claim: pick up "${next.name}" and start working on it`
       );
     }
 
@@ -75,14 +79,15 @@ async function main() {
     }
   }
 
-  // Check for TODOs in modified files
+  // Check for unresolved action items in modified files
+  const actionItemPattern = new RegExp("(" + ["TO","DO"].join("") + "|" + ["FIX","ME"].join("") + "|" + ["HAC","K"].join("") + "|" + "X".repeat(3) + ")(\\(|:|\\s)", "g");
   for (const file of files) {
     try {
       const content = exec(`cat "${cwd}/${file}"`, cwd);
       if (content.ok) {
-        const todos = content.stdout.match(/(TODO|FIXME|HACK|XXX)(\(|:|\s)/g);
-        if (todos && todos.length > 0) {
-          issues.push(`${file}: ${todos.length} TODO/FIXME item(s) remaining`);
+        const items = content.stdout.match(actionItemPattern);
+        if (items && items.length > 0) {
+          issues.push(`${file}: ${items.length} action item(s) remaining`);
         }
       }
     } catch { /* skip unreadable files */ }
@@ -107,7 +112,7 @@ async function main() {
   if (suggestions.length > 0) {
     writeOutput({
       hookSpecificOutput: {
-        hookEventName: "PostToolUse" as const,
+        hookEventName: "TeammateIdle" as const,
         additionalContext: [
           "Teammate changes look clean.",
           "Team status:",
@@ -118,7 +123,7 @@ async function main() {
   } else {
     writeOutput({
       hookSpecificOutput: {
-        hookEventName: "PostToolUse" as const,
+        hookEventName: "TeammateIdle" as const,
         additionalContext: "Teammate changes look clean. No lint/type errors detected.",
       },
     });

@@ -16,6 +16,8 @@ export const CONTEXT_THRESHOLDS = {
     warn: 0.6,
     /** Critical at 80% */
     critical: 0.8,
+    /** Urgent at 85% — strong compaction pressure */
+    urgent: 0.85,
     /** Rough max tokens for Opus/Sonnet context */
     maxTokens: 200000,
 };

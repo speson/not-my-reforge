@@ -66,7 +66,7 @@ async function main() {
     }
     writeOutput({
         hookSpecificOutput: {
-            hookEventName: "PostToolUse",
+            hookEventName: "Stop",
             additionalContext: sections.join("\n"),
         },
     });

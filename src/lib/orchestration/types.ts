@@ -1,6 +1,6 @@
 // Orchestration router types — smart mode selection for #orch
 
-export type OrchMode = "ralph" | "autopilot" | "pipeline" | "team" | "swarm" | "qa" | "ralplan";
+export type OrchMode = "ralph" | "autopilot" | "pipeline" | "team" | "swarm" | "qa" | "ralplan" | "ultrawork";
 
 export interface TaskSignals {
   tasks: string[];

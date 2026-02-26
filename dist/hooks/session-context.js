@@ -1,11 +1,11 @@
 // session-context.ts — Load project context at session start
 // Event: SessionStart (startup|resume)
 import { readStdin, writeOutput } from "../lib/io.js";
-import { writeDataFile } from "../lib/storage.js";
+import { writeDataFile, readDataFile, dataFileExists } from "../lib/storage.js";
 import { loadRegistry, saveRegistry } from "../lib/mode-registry/registry.js";
 import { EMPTY_METRICS } from "../lib/metrics/types.js";
 import { loadMetrics } from "../lib/metrics/tracker.js";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, unlinkSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { join } from "node:path";
 function exec(cmd, cwd) {
@@ -107,28 +107,60 @@ async function main() {
             sections.push("Handoff note available at .claude/handoff.md");
         }
     }
-    // 5. Active TODOs in changed files
+    // 5. Recovery state (resume only — one-shot injection)
+    if (source === "resume" && dataFileExists(cwd, "recovery-state.json")) {
+        try {
+            const recovery = readDataFile(cwd, "recovery-state.json", {
+                errorType: "unknown",
+                errorSummary: "",
+                recoveryAction: "",
+                filesBeingWorkedOn: [],
+                detectedAt: "",
+            });
+            const lines = [`Previous session ended with errors [${recovery.errorType}]:`];
+            if (recovery.errorSummary)
+                lines.push(`  Last error: ${recovery.errorSummary}`);
+            if (recovery.filesBeingWorkedOn.length > 0) {
+                lines.push(`  Files in progress: ${recovery.filesBeingWorkedOn.join(", ")}`);
+            }
+            if (recovery.recoveryAction)
+                lines.push(`  Suggested recovery: ${recovery.recoveryAction}`);
+            sections.push(lines.join("\n"));
+            // Delete after injection — one-shot
+            try {
+                unlinkSync(join(cwd, ".reforge", "recovery-state.json"));
+            }
+            catch {
+                // ignore if delete fails
+            }
+        }
+        catch {
+            // ignore malformed recovery state
+        }
+    }
+    // 6. Active action items in changed files
     if (isGit === "true") {
         const changedFiles = exec("git diff --name-only HEAD", cwd)
             .split("\n")
             .filter(Boolean)
             .slice(0, 10);
-        let todoFileCount = 0;
+        const actionItemPattern = new RegExp(["TO", "DO"].join("") + "|" + ["FIX", "ME"].join(""));
+        let actionItemFileCount = 0;
         for (const file of changedFiles) {
             const fullPath = join(cwd, file);
             if (!existsSync(fullPath))
                 continue;
             try {
                 const content = readFileSync(fullPath, "utf-8");
-                if (/TODO|FIXME/.test(content))
-                    todoFileCount++;
+                if (actionItemPattern.test(content))
+                    actionItemFileCount++;
             }
             catch {
                 // skip
             }
         }
-        if (todoFileCount > 0) {
-            sections.push(`${todoFileCount} changed file(s) contain TODOs — address before finishing`);
+        if (actionItemFileCount > 0) {
+            sections.push(`${actionItemFileCount} changed file(s) contain action items — address before finishing`);
         }
     }
     if (sections.length > 0) {
