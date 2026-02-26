@@ -220,6 +220,17 @@
         ]
       },
       {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" trust-tracker.js",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      },
+      {
         "matcher": "Task",
         "hooks": [
           {

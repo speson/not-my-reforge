@@ -7,9 +7,11 @@ import { formatModeStatus, activateMode, getActiveMode } from "../lib/mode-regis
 import { formatOwnershipStatus } from "../lib/file-ownership/registry.js";
 import { loadNotepad, addNote } from "../lib/notepad/storage.js";
 import { analyzeTask, selectMode, buildExecutionContext } from "../lib/orchestration/router.js";
+import { calculateScore, formatScoreReport } from "../lib/quality/scorer.js";
+import { formatTrustStatus } from "../lib/trust/tracker.js";
 import type { UserPromptSubmitInput } from "../lib/types.js";
 
-const SHORTCUT_NAMES = ["orch", "verify", "team", "search", "review", "qa", "status", "memo", "ultrawork", "uw"];
+const SHORTCUT_NAMES = ["orch", "verify", "team", "search", "review", "qa", "status", "memo", "ultrawork", "uw", "deep", "quick", "sec", "analyze", "critique", "help", "score", "trust"];
 const SHORTCUT_REGEX = new RegExp(`#(${SHORTCUT_NAMES.join("|")})\\b`, "i");
 
 
@@ -491,6 +493,257 @@ const SHORTCUTS: Shortcut[] = [
         "  npm run lint --if-present",
         "Signal: [UW:VERIFIED] → [UW:DONE]",
       ].join("\n");
+    },
+  },
+
+  // #deep — Deep analysis with opus-tier reasoning
+  {
+    name: "deep",
+    handler: (_cwd, args) => {
+      if (!args) {
+        return [
+          "=== Deep Analysis Mode ===",
+          "",
+          "Usage: #deep <task or question>",
+          "",
+          "Uses opus-tier agents for thorough, deep analysis.",
+          "Considers edge cases, architectural implications, long-term maintainability.",
+          "",
+          "Agents used: oracle-deep, analyst, critic",
+          "",
+          "Example: #deep analyze the auth flow for security vulnerabilities",
+        ].join("\n");
+      }
+
+      return [
+        "=== Deep Analysis Mode ===",
+        "",
+        `Task: ${args}`,
+        "",
+        "Use thorough, deep analysis for this task:",
+        "  - Consider edge cases and architectural implications",
+        "  - Evaluate long-term maintainability",
+        "  - Check for security, performance, and correctness concerns",
+        "",
+        "Preferred agents (launch via Task tool):",
+        "  oracle-deep  — Architecture analysis (opus)",
+        "  analyst       — Requirements decomposition (opus)",
+        "  critic        — Plan evaluation (opus)",
+        "",
+        "Run full verification (build, test, lint) before concluding.",
+      ].join("\n");
+    },
+  },
+
+  // #quick — Fast execution with haiku-tier speed
+  {
+    name: "quick",
+    handler: (_cwd, args) => {
+      if (!args) {
+        return [
+          "=== Quick Mode ===",
+          "",
+          "Usage: #quick <task or question>",
+          "",
+          "Prioritizes speed over depth. Concise, direct answers.",
+          "Uses haiku-tier agents for fast turnaround.",
+          "",
+          "Agents: oracle-quick, reviewer-quick, explore",
+          "",
+          "Example: #quick what does this function do?",
+        ].join("\n");
+      }
+
+      return [
+        "=== Quick Mode ===",
+        "",
+        `Task: ${args}`,
+        "",
+        "Prioritize SPEED over depth:",
+        "  - Give concise, direct answers",
+        "  - Skip full verification — focus on the specific ask",
+        "  - Use haiku model for analysis tasks",
+        "",
+        "Preferred agents (launch via Task tool):",
+        "  oracle-quick   — Fast architecture scan (haiku)",
+        "  reviewer-quick  — Fast code review (haiku)",
+        "  explore         — Quick codebase search (haiku)",
+      ].join("\n");
+    },
+  },
+
+  // #sec — Security audit
+  {
+    name: "sec",
+    handler: (_cwd, args) => {
+      if (!args) {
+        return [
+          "=== Security Audit ===",
+          "",
+          "Usage: #sec [target or scope]",
+          "",
+          "Thorough security audit using opus-tier analysis.",
+          "Checks: OWASP Top 10, secrets, CVEs, auth, input validation.",
+          "",
+          "Example: #sec audit the API authentication layer",
+        ].join("\n");
+      }
+
+      return [
+        "=== Security Audit ===",
+        "",
+        `Scope: ${args}`,
+        "",
+        "Launch the security-reviewer agent (opus) to check:",
+        "  1. OWASP Top 10 vulnerabilities",
+        "  2. Secrets detection (API keys, tokens, passwords in code)",
+        "  3. Dependency CVEs (npm audit / cargo audit)",
+        "  4. Input validation and sanitization",
+        "  5. Authentication and authorization bypasses",
+        "  6. Injection vectors (SQL, XSS, command injection)",
+        "",
+        "Rate findings: CRITICAL > HIGH > MEDIUM > LOW",
+        "Provide file:line references for every finding.",
+      ].join("\n");
+    },
+  },
+
+  // #analyze — Requirements analysis
+  {
+    name: "analyze",
+    handler: (_cwd, args) => {
+      if (!args) {
+        return [
+          "=== Requirements Analysis ===",
+          "",
+          "Usage: #analyze <goal or feature>",
+          "",
+          "Decomposes goals into structured requirements.",
+          "Uses the analyst agent (opus) for thorough decomposition.",
+          "",
+          "Example: #analyze add multi-tenant support to the API",
+        ].join("\n");
+      }
+
+      return [
+        "=== Requirements Analysis ===",
+        "",
+        `Goal: ${args}`,
+        "",
+        "Launch the analyst agent (opus) to decompose this into:",
+        "  1. Functional requirements (what must it do?)",
+        "  2. Non-functional requirements (performance, security, scalability)",
+        "  3. Constraints (technical, business, timeline)",
+        "  4. Dependencies (existing code, external services, data)",
+        "  5. Acceptance criteria for each requirement",
+        "",
+        "Output: structured spec with priority levels (must/should/nice-to-have).",
+      ].join("\n");
+    },
+  },
+
+  // #critique — Plan evaluation
+  {
+    name: "critique",
+    handler: (_cwd, args) => {
+      if (!args) {
+        return [
+          "=== Plan Critique ===",
+          "",
+          "Usage: #critique <plan or approach to evaluate>",
+          "",
+          "Evaluates plans for gaps, risks, and overlooked alternatives.",
+          "Uses the critic agent (opus) for structured evaluation.",
+          "",
+          "Example: #critique the migration plan from REST to GraphQL",
+        ].join("\n");
+      }
+
+      return [
+        "=== Plan Critique ===",
+        "",
+        `Target: ${args}`,
+        "",
+        "Launch the critic agent (opus) to evaluate:",
+        "  1. Gaps — missing steps, unhandled scenarios",
+        "  2. Risks — what could go wrong, blast radius",
+        "  3. Over-engineering — unnecessary complexity",
+        "  4. Alternatives — overlooked simpler approaches",
+        "  5. Dependencies — implicit assumptions, coupling",
+        "",
+        "Provide constructive criticism with actionable suggestions.",
+        "End with: APPROVE / REVISE / RETHINK verdict.",
+      ].join("\n");
+    },
+  },
+
+  // #help — Show all available commands and current state
+  {
+    name: "help",
+    handler: (cwd) => {
+      const active = getActiveMode(cwd);
+      return [
+        "=== not-my-reforge Commands ===",
+        "",
+        "# Shortcuts (type anywhere in prompt):",
+        "  #orch <task>      — Auto-select mode and execute",
+        "  #ultrawork <task> — ALL agents in parallel (alias: #uw)",
+        "  #deep <task>      — Deep opus-tier analysis",
+        "  #quick <task>     — Fast haiku-tier execution",
+        "  #search <query>   — 5-strategy parallel search",
+        "  #review [base]    — Multi-perspective code review",
+        "  #sec [scope]      — Security audit (OWASP, CVEs)",
+        "  #analyze <goal>   — Requirements decomposition",
+        "  #critique <plan>  — Plan evaluation and critique",
+        "  #qa [target]      — Auto test-fix-retest loop",
+        "  #team             — Team agent setup",
+        "  #status           — Session metrics and state",
+        "  #score            — Quality score report",
+        "  #trust            — Trust level and progression",
+        "  #memo [text]      — Notepad (! prefix = critical)",
+        "  #verify           — Run all quality checks",
+        "  #help             — This help message",
+        "",
+        "reforge Keywords (start of prompt):",
+        "  reforge deep <task>       — Deep analysis context",
+        "  reforge quick <task>      — Fast execution context",
+        "  reforge team N <task>     — Team of N workers",
+        "  reforge qa <target>       — QA loop",
+        "  reforge review            — Code review",
+        "  reforge security          — Security scan",
+        "  reforge analyze <goal>    — Requirements analysis",
+        "  reforge critique <plan>   — Plan critique",
+        "  reforge parallel <task>   — Parallel execution",
+        "  reforge ralplan <goal>    — Consensus planning",
+        "  reforge ultrawork <task>  — Maximum agents",
+        "",
+        "Orchestration Modes:",
+        "  reforge autopilot <task>  — Sequential multi-task",
+        "  reforge pipeline <task>   — 5-stage quality gates",
+        "  reforge loop <task>       — Iterative fix loop",
+        "  reforge swarm <task>      — Multi-angle analysis",
+        "  reforge cancel <mode>     — Cancel active mode",
+        "",
+        active ? `Active mode: ${active.name}` : "No active mode.",
+      ].join("\n");
+    },
+  },
+
+  // #score — Quality score report for current session
+  {
+    name: "score",
+    handler: (cwd) => {
+      // calculateScore is called internally by formatScoreReport; suppress unused-var warning
+      void calculateScore(cwd);
+      return formatScoreReport(cwd);
+    },
+  },
+
+  // #trust — Show progressive trust level and progression criteria
+  {
+    name: "trust",
+    handler: (cwd) => {
+      return formatTrustStatus(cwd);
     },
   },
 ];

@@ -203,7 +203,7 @@ async function main() {
         if (result) {
             writeOutput({
                 hookSpecificOutput: {
-                    hookEventName: "PostToolUse",
+                    hookEventName: "UserPromptSubmit",
                     additionalContext: result.context,
                 },
             });

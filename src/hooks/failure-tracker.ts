@@ -3,6 +3,7 @@
 
 import { readStdin, writeOutput } from "../lib/io.js";
 import { recordFailure, recordSuccess } from "../lib/circuit-breaker/tracker.js";
+import { getRecoveryStrategy } from "../lib/failure-playbook/strategies.js";
 import type { PostToolUseInput } from "../lib/types.js";
 
 async function main() {
@@ -26,11 +27,26 @@ async function main() {
 
   const { escalation } = recordFailure(cwd, toolName, errorMsg);
 
+  const strategy = getRecoveryStrategy(toolName, errorMsg);
+
+  const contextParts: string[] = [];
+
   if (escalation) {
+    contextParts.push(`[Circuit Breaker] ${escalation}`);
+  }
+
+  if (strategy) {
+    const tryCommands = strategy.commands.map((cmd) => `Try: ${cmd}`).join("\n");
+    contextParts.push(
+      `[Failure Playbook] ${strategy.errorType} detected\nSuggestion: ${strategy.suggestion}\n${tryCommands}`
+    );
+  }
+
+  if (contextParts.length > 0) {
     writeOutput({
       hookSpecificOutput: {
         hookEventName: "PostToolUse",
-        additionalContext: `[Circuit Breaker] ${escalation}`,
+        additionalContext: contextParts.join("\n\n"),
       },
     });
   }
