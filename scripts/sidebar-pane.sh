@@ -30,8 +30,6 @@ S_ACTIVE="◆"
 S_PENDING="○"
 
 last_hash=""
-no_claude_count=0
-EXIT_REASON_FILE="${CWD}/.reforge/sidebar-exit-reason"
 
 # Read version from package.json
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$CWD}"
@@ -47,34 +45,6 @@ fi
 PANE_TITLE="reforge-sidebar"
 
 # ── Helpers ──────────────────────────────────────────────
-
-# When Claude exits, sibling pane reverts to shell (bash/zsh)
-is_claude_alive() {
-  # Primary: check if any non-sidebar pane runs a non-shell command
-  while IFS='|' read -r ptitle pcmd; do
-    [[ "$ptitle" == "$PANE_TITLE" ]] && continue
-    case "$pcmd" in
-      bash|zsh|sh|fish|-bash|-zsh|"") ;;
-      *) return 0 ;;
-    esac
-  done < <(tmux list-panes -F '#{pane_title}|#{pane_current_command}' 2>/dev/null)
-
-  # Fallback: check session-metrics freshness (updated by PostToolUse hooks)
-  # If metrics were updated recently, Claude is actively working even if
-  # pane_current_command is unreliable
-  if [[ -f "$METRICS_FILE" ]]; then
-    local now file_mtime age
-    now=$(date +%s)
-    # macOS: stat -f %m, Linux: stat -c %Y
-    file_mtime=$(stat -f %m "$METRICS_FILE" 2>/dev/null || stat -c %Y "$METRICS_FILE" 2>/dev/null || echo 0)
-    age=$((now - file_mtime))
-    if [[ $age -lt 120 ]]; then
-      return 0
-    fi
-  fi
-
-  return 1
-}
 
 get_width() {
   local w
@@ -599,28 +569,13 @@ while true; do
   # Auto-close: signal file from sidebar-close.ts Stop hook
   if [[ -f "${CWD}/.reforge/sidebar-close-signal" ]]; then
     rm -f "${CWD}/.reforge/sidebar-close-signal"
-    echo "$(date -Iseconds) close-signal" >> "$EXIT_REASON_FILE" 2>/dev/null || true
     exit 0
   fi
 
-  # Auto-close: sole pane or Claude process gone
+  # Auto-close: sole pane (Claude pane is gone, sidebar is the only one left)
   pane_count=$(tmux list-panes 2>/dev/null | wc -l | tr -d ' ') || pane_count=2
   if [[ -z "$pane_count" || "$pane_count" -le 1 ]]; then
-    echo "$(date -Iseconds) pane-count=${pane_count}" >> "$EXIT_REASON_FILE" 2>/dev/null || true
     exit 0
-  fi
-
-  if ! is_claude_alive; then
-    no_claude_count=$((no_claude_count + 1))
-    # Wait 5 consecutive checks (10s) to avoid false positives
-    if [[ $no_claude_count -ge 5 ]]; then
-      # Log diagnostic info for debugging
-      pane_info=$(tmux list-panes -F '#{pane_title}|#{pane_current_command}' 2>/dev/null || echo "tmux-failed")
-      echo "$(date -Iseconds) claude-dead count=${no_claude_count} panes=[${pane_info//$'\n'/,}]" >> "$EXIT_REASON_FILE" 2>/dev/null || true
-      exit 0
-    fi
-  else
-    no_claude_count=0
   fi
 
   current_hash=$(compute_hash)
