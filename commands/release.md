@@ -40,11 +40,18 @@ Format:
 
 ### 4. Execute Release
 With user confirmation:
-1. Update version in `package.json` (and other version files)
+1. Update version in ALL version files:
+   - `package.json`
+   - `.claude-plugin/plugin.json`
+   - `.claude-plugin/marketplace.json` (metadata.version + plugins[].version)
 2. Update/create `CHANGELOG.md`
-3. Create git commit: `chore: release v1.2.0`
-4. Create git tag: `v1.2.0`
-5. Optionally push and create GitHub release
+3. Build and test: `npm run build && npm test`
+4. Create git commit: `chore: release v1.2.0`
+5. Create git tag: `v1.2.0`
+6. Push to origin with tags: `git push origin main --follow-tags`
+7. Create GitHub release: `gh release create v1.2.0 --generate-notes`
+
+**Alternative**: Use `scripts/release.sh` which automates all steps above.
 
 ## Usage
 ```
