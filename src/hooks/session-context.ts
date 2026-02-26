@@ -6,7 +6,7 @@ import { writeDataFile } from "../lib/storage.js";
 import { loadRegistry, saveRegistry } from "../lib/mode-registry/registry.js";
 import { EMPTY_METRICS } from "../lib/metrics/types.js";
 import { loadMetrics } from "../lib/metrics/tracker.js";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { join } from "node:path";
 import type { SessionStartInput } from "../lib/types.js";
@@ -51,18 +51,13 @@ async function main() {
   const cwd = input.cwd;
   const source = input.source || "startup";
 
-  // DEBUG: log hook input to /tmp for diagnosis
-  try {
-    writeFileSync("/tmp/reforge-session-debug.json", JSON.stringify({ ts: new Date().toISOString(), cwd, source, inputKeys: Object.keys(input) }, null, 2));
-  } catch { /* ignore */ }
-
   if (!cwd || !existsSync(cwd)) process.exit(0);
 
   // Reset sidebar state on session start to prevent stale data from previous sessions
   try {
     resetSidebarState(cwd, source);
-  } catch (e) {
-    writeFileSync("/tmp/reforge-reset-error.log", String(e));
+  } catch {
+    // silent — don't block session start for sidebar reset failures
   }
 
   const sections: string[] = [];

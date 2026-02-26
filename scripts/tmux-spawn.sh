@@ -27,6 +27,9 @@ if ! command -v claude &>/dev/null; then
   exit 1
 fi
 
+# Resolve absolute path so tmux panes find the binary regardless of PATH
+CLAUDE_BIN=$(command -v claude)
+
 PROMPTS=("$@")
 NUM_AGENTS=${#PROMPTS[@]}
 CWD=$(pwd)
@@ -41,14 +44,14 @@ tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
 # Create new session with first agent
 FIRST_PROMPT="${PROMPTS[0]}"
 tmux new-session -d -s "$SESSION_NAME" -c "$CWD" \
-  "echo '🤖 Agent 1/${NUM_AGENTS}'; claude -p \"${FIRST_PROMPT}\" --output-format json 2>&1 | tee /tmp/claude-spawn-${SESSION_NAME}-1.json; echo '✅ Agent 1 complete'; read"
+  "echo '🤖 Agent 1/${NUM_AGENTS}'; \"${CLAUDE_BIN}\" -p \"${FIRST_PROMPT}\" --output-format json 2>&1 | tee /tmp/claude-spawn-${SESSION_NAME}-1.json; echo '✅ Agent 1 complete'; read"
 
 # Add remaining agents as new panes
 for i in $(seq 1 $((NUM_AGENTS - 1))); do
   AGENT_NUM=$((i + 1))
   PROMPT="${PROMPTS[$i]}"
   tmux split-window -t "$SESSION_NAME" -c "$CWD" \
-    "echo '🤖 Agent ${AGENT_NUM}/${NUM_AGENTS}'; claude -p \"${PROMPT}\" --output-format json 2>&1 | tee /tmp/claude-spawn-${SESSION_NAME}-${AGENT_NUM}.json; echo '✅ Agent ${AGENT_NUM} complete'; read"
+    "echo '🤖 Agent ${AGENT_NUM}/${NUM_AGENTS}'; \"${CLAUDE_BIN}\" -p \"${PROMPT}\" --output-format json 2>&1 | tee /tmp/claude-spawn-${SESSION_NAME}-${AGENT_NUM}.json; echo '✅ Agent ${AGENT_NUM} complete'; read"
   tmux select-layout -t "$SESSION_NAME" tiled
 done
 

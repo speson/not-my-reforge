@@ -23,6 +23,9 @@ for cmd in tmux claude git; do
   fi
 done
 
+# Resolve absolute path so tmux panes find the binary regardless of PATH
+CLAUDE_BIN=$(command -v claude)
+
 # Must be in a git repo
 if ! git rev-parse --is-inside-work-tree &>/dev/null; then
   echo "Error: Not inside a git repository" >&2
@@ -82,7 +85,7 @@ echo ""
 FIRST_PROMPT="${PROMPTS[0]}"
 FIRST_WORKTREE="${WORKTREE_BASE}/agent-1"
 tmux new-session -d -s "$SESSION_NAME" -c "$FIRST_WORKTREE" \
-  "echo '🤖 Agent 1/${NUM_AGENTS} (worktree: agent-1)'; echo 'Branch: ${BRANCHES[0]}'; echo '---'; claude -p \"${FIRST_PROMPT}\" --output-format json 2>&1 | tee /tmp/claude-spawn-${SESSION_NAME}-1.json; echo ''; echo '✅ Agent 1 complete'; read"
+  "echo '🤖 Agent 1/${NUM_AGENTS} (worktree: agent-1)'; echo 'Branch: ${BRANCHES[0]}'; echo '---'; \"${CLAUDE_BIN}\" -p \"${FIRST_PROMPT}\" --output-format json 2>&1 | tee /tmp/claude-spawn-${SESSION_NAME}-1.json; echo ''; echo '✅ Agent 1 complete'; read"
 
 # Add remaining agents as new panes
 for i in $(seq 1 $((NUM_AGENTS - 1))); do
@@ -90,7 +93,7 @@ for i in $(seq 1 $((NUM_AGENTS - 1))); do
   PROMPT="${PROMPTS[$i]}"
   WORKTREE="${WORKTREE_BASE}/agent-${AGENT_NUM}"
   tmux split-window -t "$SESSION_NAME" -c "$WORKTREE" \
-    "echo '🤖 Agent ${AGENT_NUM}/${NUM_AGENTS} (worktree: agent-${AGENT_NUM})'; echo 'Branch: ${BRANCHES[$i]}'; echo '---'; claude -p \"${PROMPT}\" --output-format json 2>&1 | tee /tmp/claude-spawn-${SESSION_NAME}-${AGENT_NUM}.json; echo ''; echo '✅ Agent ${AGENT_NUM} complete'; read"
+    "echo '🤖 Agent ${AGENT_NUM}/${NUM_AGENTS} (worktree: agent-${AGENT_NUM})'; echo 'Branch: ${BRANCHES[$i]}'; echo '---'; \"${CLAUDE_BIN}\" -p \"${PROMPT}\" --output-format json 2>&1 | tee /tmp/claude-spawn-${SESSION_NAME}-${AGENT_NUM}.json; echo ''; echo '✅ Agent ${AGENT_NUM} complete'; read"
   tmux select-layout -t "$SESSION_NAME" tiled
 done
 

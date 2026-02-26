@@ -6,11 +6,13 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "npx tsx --test src/lib/__tests__/*.test.ts"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.2"
   },
   "engines": {
     "node": ">=18.0.0"

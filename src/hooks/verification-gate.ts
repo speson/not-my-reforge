@@ -12,6 +12,15 @@ async function main() {
   if (!cwd) process.exit(0);
 
   const transcript = input.transcript || [];
+
+  // Grace period: skip verification if no tool_use blocks exist (pure chat session)
+  const hasToolUse = transcript.some((msg: any) =>
+    Array.isArray(msg.content)
+      ? msg.content.some((block: any) => block.type === "tool_use")
+      : msg.role === "tool" || msg.type === "tool_use"
+  );
+  if (!hasToolUse) process.exit(0);
+
   const report = runVerification(cwd, transcript);
 
   if (!report.allPassed) {

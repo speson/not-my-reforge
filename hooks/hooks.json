@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/ensure-tmux.sh\"",
-            "timeout": 120,
+            "timeout": 45,
             "statusMessage": "Checking tmux..."
           }
         ]
