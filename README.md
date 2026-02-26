@@ -16,7 +16,7 @@ AI agent orchestration, quality hooks, and smart routing for Claude Code — ref
 For the best experience (sidebar dashboard, parallel execution), run inside tmux:
 
 ```bash
-tmux new-session "claude"
+tmux new-session "claude --dangerously-skip-permissions"
 ```
 
 <details>
@@ -231,7 +231,7 @@ A tmux sidebar pane (40 cols) opens automatically on session start, showing 3 se
 
 ─────────────────────────────────────
 
-  TODO
+  TASKS
   ✓ 1. Setup auth module
   ◆ 2. Implement login flow
   ○ 3. Add tests
