@@ -356,7 +356,7 @@
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" sidebar-close.js",
             "timeout": 5,
-            "statusMessage": "Closing sidebar..."
+            "async": true
           },
           {
             "type": "command",

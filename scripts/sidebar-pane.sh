@@ -30,6 +30,7 @@ S_ACTIVE="◆"
 S_PENDING="○"
 
 last_hash=""
+no_claude_count=0
 
 # Read version from package.json
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$CWD}"
@@ -41,7 +42,22 @@ else
   [[ -z "$VERSION" ]] && VERSION="0.0.0"
 fi
 
+# PANE_TITLE must match sidebar-open.ts
+PANE_TITLE="reforge-sidebar"
+
 # ── Helpers ──────────────────────────────────────────────
+
+# When Claude exits, sibling pane reverts to shell (bash/zsh)
+is_claude_alive() {
+  while IFS='|' read -r ptitle pcmd; do
+    [[ "$ptitle" == "$PANE_TITLE" ]] && continue
+    case "$pcmd" in
+      bash|zsh|sh|fish|-bash|-zsh|"") ;;
+      *) return 0 ;;
+    esac
+  done < <(tmux list-panes -F '#{pane_title}|#{pane_current_command}' 2>/dev/null)
+  return 1
+}
 
 get_width() {
   local w
@@ -563,6 +579,28 @@ compute_hash() {
 render
 
 while true; do
+  # Auto-close: signal file from sidebar-close.ts Stop hook
+  if [[ -f "${CWD}/.reforge/sidebar-close-signal" ]]; then
+    rm -f "${CWD}/.reforge/sidebar-close-signal"
+    exit 0
+  fi
+
+  # Auto-close: sole pane or Claude process gone
+  pane_count=$(tmux list-panes 2>/dev/null | wc -l | tr -d ' ')
+  if [[ "$pane_count" -le 1 ]]; then
+    exit 0
+  fi
+
+  if ! is_claude_alive; then
+    no_claude_count=$((no_claude_count + 1))
+    # Wait 2 consecutive checks (4s) to avoid false positives during restarts
+    if [[ $no_claude_count -ge 2 ]]; then
+      exit 0
+    fi
+  else
+    no_claude_count=0
+  fi
+
   current_hash=$(compute_hash)
 
   if [[ "$current_hash" != "$last_hash" ]]; then

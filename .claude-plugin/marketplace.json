@@ -5,20 +5,25 @@
   },
   "metadata": {
     "description": "AI agent orchestration, quality hooks, and smart routing for Claude Code",
-    "version": "2.3.3"
+    "version": "2.5.2"
   },
   "plugins": [
     {
       "name": "not-my-reforge",
       "source": "./",
       "description": "not oh-my. reforged. — AI agent orchestration, quality hooks, and smart routing for Claude Code",
-      "version": "2.3.3",
+      "version": "2.5.2",
       "author": {
         "name": "Tom (speson)"
       },
       "repository": "https://github.com/speson/not-my-reforge",
       "category": "development",
-      "tags": ["agents", "hooks", "orchestration", "quality"]
+      "tags": [
+        "agents",
+        "hooks",
+        "orchestration",
+        "quality"
+      ]
     }
   ]
 }

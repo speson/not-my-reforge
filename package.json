@@ -1,13 +1,14 @@
 {
   "name": "not-my-reforge",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "not oh-my. reforged. — AI agent orchestration, quality hooks, and smart routing for Claude Code",
   "author": "Tom (speson)",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "test": "npx tsx --test src/lib/__tests__/*.test.ts"
+    "test": "npx tsx --test src/lib/__tests__/*.test.ts",
+    "release": "./scripts/release.sh"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
