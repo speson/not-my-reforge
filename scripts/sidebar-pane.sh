@@ -3,7 +3,7 @@
 # Usage: bash sidebar-pane.sh <project-cwd>
 # Polls data sources every 2s, re-renders on change
 
-set -euo pipefail
+set -u   # -e and pipefail intentionally omitted: transient tmux/jq failures must not kill the poll loop
 
 CWD="${1:-.}"
 TODO_FILE="${CWD}/.reforge/todo-state.json"
@@ -586,8 +586,8 @@ while true; do
   fi
 
   # Auto-close: sole pane or Claude process gone
-  pane_count=$(tmux list-panes 2>/dev/null | wc -l | tr -d ' ')
-  if [[ "$pane_count" -le 1 ]]; then
+  pane_count=$(tmux list-panes 2>/dev/null | wc -l | tr -d ' ') || pane_count=2
+  if [[ -z "$pane_count" || "$pane_count" -le 1 ]]; then
     exit 0
   fi
 
@@ -604,7 +604,7 @@ while true; do
   current_hash=$(compute_hash)
 
   if [[ "$current_hash" != "$last_hash" ]]; then
-    render
+    render || true
     last_hash="$current_hash"
   fi
 
