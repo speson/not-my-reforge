@@ -8,8 +8,9 @@ AI agent orchestration, quality hooks, and smart routing for Claude Code — ref
 
 ## Install
 
-```bash
-claude plugin add https://github.com/speson/not-my-reforge
+```
+/plugin marketplace https://github.com/speson/not-my-reforge
+/plugin install not-my-reforge
 ```
 
 For the best experience (sidebar dashboard, parallel execution), run inside tmux:
