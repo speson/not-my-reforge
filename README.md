@@ -28,7 +28,7 @@ Just install and let it cook.
 ## Install
 
 ```
-/plugin marketplace https://github.com/speson/not-my-reforge
+/plugin add marketplace https://github.com/speson/not-my-reforge
 /plugin install not-my-reforge
 ```
 
